@@ -2,7 +2,7 @@ package advent.day.day03
 
 import advent.AdventDay
 
-class AdventDay03: AdventDay() {
+class AdventDay03 : AdventDay() {
     override fun run() {
         val fileText = getFileAsText("day03")
         val binaryNumbers: List<String> = fileText.split("\n").toList()
@@ -19,7 +19,6 @@ class AdventDay03: AdventDay() {
         println("CO2 Scrubber Rating: $co2ScrubberRatingBinary")
         println("CO2 Scrubber Rating Value: ${Integer.parseInt(co2ScrubberRatingBinary, 2)}")
     }
-
 
     private fun findRating(
         binaryNumbers: List<String>,
@@ -42,7 +41,7 @@ class AdventDay03: AdventDay() {
             bitsOccurrenceCount.second
         }
 
-        val filteredBinaryNumbers = binaryNumbers.filter{
+        val filteredBinaryNumbers = binaryNumbers.filter {
             it[bitPosition] == bitsOccurrence[bitPosition]
         }
 
@@ -73,7 +72,7 @@ class AdventDay03: AdventDay() {
         val binaryNumberWithAllMostCommonBits = bitsOccurrence.mapValues {
             if ((it.value * 2) >= totalReadings) '1' else '0'
         }
-        val binaryNumberWithLeastMostCommonBits = binaryNumberWithAllMostCommonBits.mapValues{
+        val binaryNumberWithLeastMostCommonBits = binaryNumberWithAllMostCommonBits.mapValues {
             if (it.value == '1') {
                 '0'
             } else {

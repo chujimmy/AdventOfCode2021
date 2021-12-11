@@ -3,7 +3,7 @@ package advent.day.day02
 import advent.AdventDay
 import advent.day.day02.domain.Movement
 
-class AdventDay02: AdventDay() {
+class AdventDay02 : AdventDay() {
     override fun run() {
         val fileText = getFileAsText("day02")
         val movements: Array<String> = fileText.split("\n").toTypedArray()
@@ -13,7 +13,7 @@ class AdventDay02: AdventDay() {
         var aim = 0
 
         for (movementValue in movements) {
-            val pair = movementValue.split(" ").let{
+            val pair = movementValue.split(" ").let {
                 Pair(Movement.fromMovementName(it[0]), it[1].toInt())
             }
 
@@ -29,7 +29,6 @@ class AdventDay02: AdventDay() {
                 }
                 else -> {}
             }
-
         }
 
         println("Result: ${position * depth}")

@@ -2,12 +2,13 @@ package advent.day.day01
 
 import advent.AdventDay
 import advent.day.day01.domain.Measurement
-import java.util.*
+import java.util.LinkedList
+import java.util.Queue
 
-class AdventDay01: AdventDay() {
+class AdventDay01 : AdventDay() {
     override fun run() {
         val fileText = getFileAsText("day01")
-        val measurementsValues: Array<Int> = fileText.split("\n").map{ it.toInt()}.toTypedArray()
+        val measurementsValues: Array<Int> = fileText.split("\n").map { it.toInt() }.toTypedArray()
 
         val queue: Queue<Measurement> = LinkedList()
         var queueIterator: MutableIterator<Measurement>
@@ -51,7 +52,7 @@ class AdventDay01: AdventDay() {
             return false
         }
 
-        return measurementToCheck.isComplete() && previousMeasurement.isComplete()
-            && measurementToCheck.sum() > previousMeasurement.sum()
+        return measurementToCheck.isComplete() && previousMeasurement.isComplete() &&
+            measurementToCheck.sum() > previousMeasurement.sum()
     }
 }

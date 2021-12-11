@@ -1,7 +1,6 @@
 package advent.day.day04.domain
 
 import java.lang.StrictMath.sqrt
-import java.util.*
 import java.util.regex.Pattern
 import kotlin.collections.ArrayList
 
@@ -35,8 +34,8 @@ class BingoCard(numbers: String) {
             return false
         }
 
-        val horizontalLine = IntArray(this.gridSize){it}
-        val verticalLine = IntArray(this.gridSize){ it * this.gridSize}
+        val horizontalLine = IntArray(this.gridSize) { it }
+        val verticalLine = IntArray(this.gridSize) { it * this.gridSize }
 
         for (i in 0 until this.gridSize) {
             val lineToCheck = horizontalLine.map { it + i * this.gridSize }
@@ -48,7 +47,7 @@ class BingoCard(numbers: String) {
             }
 
             if (this.markedNumber.containsAll(columnToCheck)) {
-                this.isWon = true;
+                this.isWon = true
                 return true
             }
         }
@@ -57,8 +56,8 @@ class BingoCard(numbers: String) {
     }
 
     fun getScore(drawnNumber: Int): Int {
-        return drawnNumber * this.card.filterIndexed{ i, _ ->
+        return drawnNumber * this.card.filterIndexed { i, _ ->
             !this.markedNumber.contains(i)
-        }.toList().sumOf{it}
+        }.toList().sumOf { it }
     }
 }

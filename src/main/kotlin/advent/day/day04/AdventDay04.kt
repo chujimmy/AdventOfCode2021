@@ -4,7 +4,7 @@ import advent.AdventDay
 import advent.day.day04.domain.BingoCard
 import java.util.regex.Pattern
 
-class AdventDay04: AdventDay() {
+class AdventDay04 : AdventDay() {
     override fun run() {
         val fileText = getFileAsText("day04")
         val fileContent = fileText.split(Pattern.compile("\n\n"))
@@ -26,12 +26,10 @@ class AdventDay04: AdventDay() {
                     if (isNumberOnCard && card.isComplete()) {
                         val score = card.getScore(number)
                         println("We have a winner after number $number was drawn")
-                        println("Card ${i+1} with score: $score")
+                        println("Card ${i + 1} with score: $score")
                         println("Card: ${card.card}")
                     }
                 }
-
-
             }
         }
     }
