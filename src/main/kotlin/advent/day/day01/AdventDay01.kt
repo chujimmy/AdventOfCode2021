@@ -1,58 +1,26 @@
 package advent.day.day01
 
 import advent.AdventDay
-import advent.day.day01.domain.Measurement
-import java.util.LinkedList
-import java.util.Queue
 
 class AdventDay01 : AdventDay() {
+    private val fileText = getFileAsText("day01")
+
     override fun run() {
-        val fileText = getFileAsText("day01")
-        val measurementsValues: Array<Int> = fileText.split("\n").map { it.toInt() }.toTypedArray()
+        val measurementsValues = fileText.split("\n")
+            .map { it.toInt() }
+            .toList()
 
-        val queue: Queue<Measurement> = LinkedList()
-        var queueIterator: MutableIterator<Measurement>
+        val increasedValuePart01 = measurementsValues
+            .windowed(1, 1)
+            .windowed(2, 1)
+            .count { it[0][0] < it[1][0] }
 
-        var countIncreasedMeasurements = 0
-        var previousMeasurement: Measurement? = null
+        val increasedValuePart02 = measurementsValues
+            .windowed(3, 1)
+            .windowed(2, 1)
+            .count { it[0].sum() < it[1].sum() }
 
-        for (measurementValue in measurementsValues) {
-            val measurementToCheck = queue.peek()
-            if (measurementToCheck != null && measurementToCheck.isComplete()) {
-                queue.poll()
-            }
-
-            queue.add(Measurement())
-            queueIterator = queue.iterator()
-            queueIterator.forEachRemaining { it.add(measurementValue) }
-
-            if (hasMeasurementValueIncreased(previousMeasurement, measurementToCheck)) {
-                countIncreasedMeasurements++
-            }
-
-            previousMeasurement = measurementToCheck
-        }
-
-        queueIterator = queue.iterator()
-        queueIterator.forEachRemaining {
-            if (hasMeasurementValueIncreased(previousMeasurement, it)) {
-                countIncreasedMeasurements++
-            }
-            previousMeasurement = it
-        }
-
-        println("Number of increase: $countIncreasedMeasurements")
-    }
-
-    private fun hasMeasurementValueIncreased(
-        previousMeasurement: Measurement?,
-        measurementToCheck: Measurement?,
-    ): Boolean {
-        if (previousMeasurement == null || measurementToCheck == null) {
-            return false
-        }
-
-        return measurementToCheck.isComplete() && previousMeasurement.isComplete() &&
-            measurementToCheck.sum() > previousMeasurement.sum()
+        println("Number of increase Part 01: $increasedValuePart01")
+        println("Number of increase Part 02: $increasedValuePart02")
     }
 }

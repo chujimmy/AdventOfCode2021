@@ -12,7 +12,7 @@ enum class Movement(
     companion object {
         private val map = values().associateBy(Movement::movementName)
 
-        fun fromMovementName(name: String): Movement {
+        fun fromName(name: String): Movement {
             return map.getOrDefault(name, NONE)
         }
     }

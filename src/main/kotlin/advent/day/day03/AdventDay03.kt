@@ -3,83 +3,82 @@ package advent.day.day03
 import advent.AdventDay
 
 class AdventDay03 : AdventDay() {
+    private val fileText = getFileAsText("day03")
+    private val binaryNumbers = fileText.split("\n").toList()
+
     override fun run() {
-        val fileText = getFileAsText("day03")
-        val binaryNumbers: List<String> = fileText.split("\n").toList()
-        val bitCount = binaryNumbers[0].length
+        runPart01()
+        runPart02()
+    }
 
-        val oxygenGeneratorRating = findRating(binaryNumbers, bitCount, 0, true)
-        val co2ScrubberRating = findRating(binaryNumbers, bitCount, 0, false)
+    private fun runPart01() {
+        val bitOccurrences = countBitOccurrences(binaryNumbers)
 
-        val oxygenGeneratorRatingBinary = if (oxygenGeneratorRating.isNotEmpty()) oxygenGeneratorRating[0] else "0"
-        val co2ScrubberRatingBinary = if (co2ScrubberRating.isNotEmpty()) co2ScrubberRating[0] else "0"
+        val gammaRateBinary = getBinaryNumber(bitOccurrences.first)
+        val epsilonRateBinary = getBinaryNumber(bitOccurrences.second)
+
+        println("Gamma Rate: $gammaRateBinary")
+        println("Gamma Rate Value: ${Integer.parseInt(gammaRateBinary, 2)}")
+
+        println("Epsilon Rate: $epsilonRateBinary")
+        println("Epsilon Rate Value: ${Integer.parseInt(epsilonRateBinary, 2)}\n")
+    }
+
+    private fun runPart02() {
+        val oxygenGeneratorRating = findRating(binaryNumbers, 0, true)
+        val co2ScrubberRating = findRating(binaryNumbers, 0, false)
+
+        val oxygenGeneratorRatingBinary = oxygenGeneratorRating.getOrElse(0) { "0" }
+        val co2ScrubberRatingBinary = co2ScrubberRating.getOrElse(0) { "0" }
 
         println("Oxygen Generator Rating: $oxygenGeneratorRatingBinary")
         println("Oxygen Generator Rating Value: ${Integer.parseInt(oxygenGeneratorRatingBinary, 2)}")
         println("CO2 Scrubber Rating: $co2ScrubberRatingBinary")
-        println("CO2 Scrubber Rating Value: ${Integer.parseInt(co2ScrubberRatingBinary, 2)}")
+        println("CO2 Scrubber Rating Value: ${Integer.parseInt(co2ScrubberRatingBinary, 2)}\n")
+    }
+
+    private fun getBinaryNumber(binaryNumber: Map<Int, Char>): String {
+        return binaryNumber
+            .toSortedMap()
+            .map { it.value }
+            .filterNotNull()
+            .joinToString("")
     }
 
     private fun findRating(
         binaryNumbers: List<String>,
-        bitCount: Int,
-        bitPosition: Int,
-        useMostCommonOccurrence: Boolean
+        bitIndexToCheck: Int,
+        useMostCommonBit: Boolean
     ): List<String> {
-        if (binaryNumbers.size == 1) {
+        if (binaryNumbers.size <= 1) {
             return binaryNumbers
         }
 
-        if (bitPosition >= bitCount || binaryNumbers.isEmpty()) {
-            return emptyList()
+        val filteredBinaryNumbers = binaryNumbers.filter { number ->
+            val charToCheck = if (useMostCommonBit) {
+                countBitOccurrences(binaryNumbers).first
+            } else {
+                countBitOccurrences(binaryNumbers).second
+            }
+
+            number[bitIndexToCheck] == charToCheck[bitIndexToCheck]
         }
 
-        val bitsOccurrenceCount = countBitsOccurrence(binaryNumbers, bitCount)
-        val bitsOccurrence = if (useMostCommonOccurrence) {
-            bitsOccurrenceCount.first
-        } else {
-            bitsOccurrenceCount.second
-        }
-
-        val filteredBinaryNumbers = binaryNumbers.filter {
-            it[bitPosition] == bitsOccurrence[bitPosition]
-        }
-
-        return findRating(filteredBinaryNumbers, bitCount, bitPosition + 1, useMostCommonOccurrence)
+        return findRating(filteredBinaryNumbers, bitIndexToCheck + 1, useMostCommonBit)
     }
 
-    private fun countBitsOccurrence(
-        binaryNumbers: List<String>,
-        bitsNumber: Int,
-    ): Pair<Map<Int, Char>, Map<Int, Char>> {
-        if (binaryNumbers.isEmpty()) {
-            val emptyMap = emptyMap<Int, Char>()
-            return Pair(emptyMap, emptyMap)
+    private fun countBitOccurrences(binaryNumbers: List<String>): Pair<Map<Int, Char>, Map<Int, Char>> {
+        val bitsPerNumber = binaryNumbers[0].length
+        val totalBinaryNumbers = binaryNumbers.size
+
+        return (0 until bitsPerNumber).map { bitPosition ->
+            val ones = binaryNumbers.count { it[bitPosition] == '1' }
+            val mostCommonChar = if (ones * 2 >= totalBinaryNumbers) '1' else '0'
+            val leastCommonChar = if (ones * 2 >= totalBinaryNumbers) '0' else '1'
+
+            Pair(hashMapOf(bitPosition to mostCommonChar), hashMapOf(bitPosition to leastCommonChar))
+        }.fold(Pair(emptyMap(), emptyMap())) { acc, pair ->
+            Pair(acc.first.plus(pair.first), acc.second.plus(pair.second))
         }
-
-        val bitsOccurrence: MutableMap<Int, Int> = HashMap()
-
-        val totalReadings = binaryNumbers.size
-
-        for (binaryNumber in binaryNumbers) {
-            for (i in 0 until bitsNumber) {
-                if (binaryNumber[i] == '1') {
-                    bitsOccurrence[i] = bitsOccurrence.getOrDefault(i, 0) + 1
-                }
-            }
-        }
-
-        val binaryNumberWithAllMostCommonBits = bitsOccurrence.mapValues {
-            if ((it.value * 2) >= totalReadings) '1' else '0'
-        }
-        val binaryNumberWithLeastMostCommonBits = binaryNumberWithAllMostCommonBits.mapValues {
-            if (it.value == '1') {
-                '0'
-            } else {
-                '1'
-            }
-        }
-
-        return Pair(binaryNumberWithAllMostCommonBits, binaryNumberWithLeastMostCommonBits)
     }
 }

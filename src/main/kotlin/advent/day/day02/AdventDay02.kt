@@ -4,33 +4,57 @@ import advent.AdventDay
 import advent.day.day02.domain.Movement
 
 class AdventDay02 : AdventDay() {
-    override fun run() {
-        val fileText = getFileAsText("day02")
-        val movements: Array<String> = fileText.split("\n").toTypedArray()
+    private val fileText = getFileAsText("day02")
+    private val movements = fileText
+        .split("\n")
+        .toList()
+        .map { mStr -> mStr.split(" ").let { Pair(Movement.fromName(it[0]), it[1].toInt()) } }
+        .toList()
 
+    override fun run() {
+        runPart01()
+        runPart02()
+    }
+
+    private fun runPart01() {
+        var hPosition = 0
         var depth = 0
-        var position = 0
+
+        movements.forEach { movement ->
+            val movementUnits = movement.second
+            val movementMultiplier = movement.first.multiplier
+
+            when (movement.first) {
+                Movement.UP, Movement.DOWN -> { depth += movementUnits * movementMultiplier }
+                Movement.FORWARD -> { hPosition += movementUnits }
+                else -> {}
+            }
+        }
+
+        println("Result: ${hPosition * depth}")
+    }
+
+    private fun runPart02() {
+        var depth = 0
+        var hPosition = 0
         var aim = 0
 
-        for (movementValue in movements) {
-            val pair = movementValue.split(" ").let {
-                Pair(Movement.fromMovementName(it[0]), it[1].toInt())
-            }
+        movements.forEach { movement ->
+            val movementUnits = movement.second
+            val movementMultiplier = movement.first.multiplier
 
-            val movement = pair.first
-            val units = pair.second
-            when (movement) {
+            when (movement.first) {
                 Movement.UP, Movement.DOWN -> {
-                    aim += units * movement.multiplier
+                    aim += movementUnits * movementMultiplier
                 }
                 Movement.FORWARD -> {
-                    position += units * movement.multiplier
-                    depth += units * aim
+                    hPosition += movementUnits
+                    depth += aim * movementUnits
                 }
                 else -> {}
             }
         }
 
-        println("Result: ${position * depth}")
+        println("Result: ${depth * hPosition}")
     }
 }

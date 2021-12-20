@@ -7,29 +7,43 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 
 class AdventDay05 : AdventDay() {
-    override fun run() {
-        val fileText = getFileAsText("day05")
-        var furthestPoint = 0
-
-        val ventMovements = fileText.split("\n").toTypedArray()
-        val formattedVentMovements = ventMovements.map { movement ->
+    private val fileText = getFileAsText("day05")
+    private val ventMovements = fileText.split("\n")
+        .map { movement ->
             val ventStartEnd = movement.split(" -> ")
 
-            if (ventStartEnd.size < 2) {
-                throw Exception("Not enough coordinates to calculate vent movement")
-            }
-
-            val start = Coordinates.fromString(ventStartEnd[0])
-            val end = Coordinates.fromString(ventStartEnd[1])
-
-            furthestPoint = listOf(furthestPoint, start.x, start.y, end.x, end.y).maxOrNull() ?: 0
-
-            Pair(start, end)
+            Pair(
+                Coordinates.fromString(ventStartEnd[0]),
+                Coordinates.fromString(ventStartEnd[1]),
+            )
         }
 
-        val diagram: Array<IntArray> = Array(furthestPoint + 1) { IntArray(furthestPoint + 1) { 0 } }
+    private val furthestPoint = ventMovements
+        .fold(0) { acc, movement ->
+            listOf(
+                acc, movement.first.x, movement.first.y, movement.second.x, movement.second.y
+            ).maxOrNull() ?: 0
+        }
 
-        formattedVentMovements.forEach { movement ->
+    override fun run() {
+        runPart01()
+        runPart02()
+    }
+
+    private fun runPart01() {
+        val count = countDangerousAreas(false)
+        println("Dangerous areas Part 1: $count")
+    }
+
+    private fun runPart02() {
+        val count = countDangerousAreas(true)
+        println("Dangerous areas Part 2: $count")
+    }
+
+    private fun countDangerousAreas(useDiagonal: Boolean): Int {
+        val diagram = List(furthestPoint + 1) { IntArray(furthestPoint + 1) { 0 } }
+
+        ventMovements.forEach { movement ->
             val start = movement.first
             val end = movement.second
 
@@ -41,34 +55,29 @@ class AdventDay05 : AdventDay() {
             when (start.calculateDirection(end)) {
                 Direction.VERTICAL -> {
                     (startingY..endingY).forEach { y ->
-                        diagram[start.x][y]++
+                        diagram[y][start.x]++
                     }
                 }
                 Direction.HORIZONTAL -> {
                     (startingX..endingX).forEach { x ->
-                        diagram[x][start.y]++
+                        diagram[start.y][x]++
                     }
                 }
                 Direction.DIAGONAL -> {
-                    val diagonalLength = endingY - startingY
-                    val direction = start.calculateDiagonalDirection(end)
-                    (0..diagonalLength).forEach { i ->
-                        val x = start.x + (i * direction.first)
-                        val y = start.y + (i * direction.second)
-                        diagram[x][y]++
+                    if (useDiagonal) {
+                        val diagonalLength = endingY - startingY
+                        val direction = start.calculateDiagonalDirection(end)
+                        (0..diagonalLength).forEach { i ->
+                            val x = start.x + (i * direction.first)
+                            val y = start.y + (i * direction.second)
+                            diagram[y][x]++
+                        }
                     }
                 }
                 else -> {}
             }
         }
 
-        val dangerousAreas = diagram.sumOf { i ->
-            i.count {
-                j ->
-                j >= 2
-            }
-        }
-
-        println("Dangerous areas: $dangerousAreas")
+        return diagram.sumOf { hLine -> hLine.count { it >= 2 } }
     }
 }
