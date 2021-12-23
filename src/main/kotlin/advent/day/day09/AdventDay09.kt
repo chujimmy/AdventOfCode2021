@@ -1,79 +1,62 @@
 package advent.day.day09
 
 import advent.AdventDay
+import advent.day.day09.domain.Point
 
 class AdventDay09 : AdventDay() {
+    private val fileText = getFileAsText("day09")
+
+    private val heightMap = fileText
+        .split("\n")
+        .map { it.toCharArray().map { d -> d.digitToInt() } }
+
+    private val adjacentPointsOffsets = listOf(
+        Pair(-1, 0),
+        Pair(1, 0),
+        Pair(0, -1),
+        Pair(0, 1),
+    )
+
     override fun run() {
-        val fileText = getFileAsText("day09")
+        val lowPoints = heightMap
+            .flatMapIndexed { y, hLine ->
+                hLine.mapIndexed { x, pointHeight ->
+                    val currentPoint = Point(x, y, pointHeight)
+                    val isLowPoint = adjacentPointsOffsets
+                        .map { o -> isPointLower(currentPoint, x + o.first, y + o.second) }
+                        .reduce { acc, element -> acc && element }
 
-        val heightMap: Array<Array<Int>> = fileText.split("\n")
-            .map { line ->
-                line.toCharArray()
-                    .map { it.digitToInt() }
-                    .toTypedArray()
-            }
-            .toTypedArray()
-
-        val lowPoints: MutableList<Pair<Int, Int>> = mutableListOf()
-        var countLowPoints = 0
-        var sumLowPoints = 0
-
-        heightMap.forEachIndexed { x, line ->
-            line.forEachIndexed { y, height ->
-                val topHeight = getHeight(heightMap, x - 1, y)
-                val bottomHeight = getHeight(heightMap, x + 1, y)
-                val leftHeight = getHeight(heightMap, x, y - 1)
-                val rightHeight = getHeight(heightMap, x, y + 1)
-
-                if ((height in 0 until topHeight || topHeight == -1) &&
-                    (height in 0 until bottomHeight || bottomHeight == -1) &&
-                    (height in 0 until leftHeight || leftHeight == -1) &&
-                    (height in 0 until rightHeight || rightHeight == -1)
-                ) {
-                    lowPoints.add(Pair(x, y))
-                    countLowPoints += 1
-                    sumLowPoints += (height + 1)
+                    Pair(Point(x, y, pointHeight), isLowPoint)
                 }
             }
-        }
+            .filter { it.second }
+            .map { it.first }
 
-        val basins: MutableMap<Pair<Int, Int>, MutableSet<Pair<Int, Int>>> = mutableMapOf()
+        println("Risk Level: ${lowPoints.sumOf { it.height + 1 }}")
 
-        val offsetsToConsider: Array<Pair<Int, Int>> = arrayOf(
-            Pair(-1, 0),
-            Pair(1, 0),
-            Pair(0, -1),
-            Pair(0, 1),
-        )
-
-        lowPoints.forEach { lowPoint ->
-            val pointsToVisit: MutableList<Pair<Int, Int>> = mutableListOf()
-            pointsToVisit.add(lowPoint)
+        val basins = lowPoints.associateWith { lowPoint ->
+            val pointsToVisit: MutableList<Point> = mutableListOf(lowPoint)
+            val basin: MutableSet<Point> = mutableSetOf()
 
             while (pointsToVisit.isNotEmpty()) {
                 val point = pointsToVisit.removeFirst()
-                val pointHeight = getHeight(heightMap, point)
-
-                val basin = basins.getOrDefault(lowPoint, mutableSetOf())
                 basin.add(point)
-                basins[lowPoint] = basin
 
-                offsetsToConsider.forEach loop@{ offset ->
-                    val adjacentX = point.first + offset.first
-                    val adjacentY = point.second + offset.second
+                adjacentPointsOffsets.forEach loop@{ offset ->
+                    val adjacentX = point.x + offset.first
+                    val adjacentY = point.y + offset.second
 
-                    val adjacentPoint = Pair(adjacentX, adjacentY)
-                    val adjacentHeight = getHeight(heightMap, adjacentPoint)
+                    if (isValidPoint(adjacentX, adjacentY)) {
+                        val adjacentHeight = heightMap[adjacentY][adjacentX]
+                        val adjacentPoint = Point(adjacentX, adjacentY, adjacentHeight)
 
-                    if (adjacentHeight > 0 &&
-                        adjacentHeight > pointHeight &&
-                        adjacentHeight < 9 &&
-                        !basin.contains(adjacentPoint)
-                    ) {
-                        pointsToVisit.add(adjacentPoint)
+                        if (adjacentHeight > point.height && adjacentHeight < 9 && !basin.contains(adjacentPoint)) {
+                            pointsToVisit.add(adjacentPoint)
+                        }
                     }
                 }
             }
+            basin
         }
 
         val multiplication = basins.values
@@ -85,19 +68,15 @@ class AdventDay09 : AdventDay() {
         println("3 biggest basins multiplication: $multiplication")
     }
 
-    private fun getHeight(heightMap: Array<Array<Int>>, x: Int, y: Int): Int {
-        if (x < 0 || x >= heightMap.size) {
-            return -1
-        }
-
-        if (y < 0 || y >= heightMap[0].size) {
-            return -1
-        }
-
-        return heightMap[x][y]
+    private fun isValidPoint(xToCheck: Int, yToCheck: Int): Boolean {
+        return xToCheck >= 0 && xToCheck < heightMap.size && yToCheck >= 0 && yToCheck < heightMap[0].size
     }
 
-    private fun getHeight(heightMap: Array<Array<Int>>, pair: Pair<Int, Int>): Int {
-        return getHeight(heightMap, pair.first, pair.second)
+    private fun isPointLower(comparisonPoint: Point, xToCheck: Int, yToCheck: Int): Boolean {
+        if (!isValidPoint(xToCheck, yToCheck)) {
+            return true
+        }
+
+        return comparisonPoint.height < heightMap[yToCheck][xToCheck]
     }
 }
