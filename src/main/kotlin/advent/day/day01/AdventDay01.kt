@@ -6,14 +6,14 @@ class AdventDay01 : AdventDay() {
     private val fileText = getFileAsText("day01")
 
     override fun run() {
-        val measurementsValues = fileText.split("\n")
+        val measurementsValues = fileText
+            .split("\n")
             .map { it.toInt() }
-            .toList()
 
         val increasedValuePart01 = measurementsValues
             .windowed(1, 1)
             .windowed(2, 1)
-            .count { it[0][0] < it[1][0] }
+            .count { it[0].sum() < it[1].sum() }
 
         val increasedValuePart02 = measurementsValues
             .windowed(3, 1)

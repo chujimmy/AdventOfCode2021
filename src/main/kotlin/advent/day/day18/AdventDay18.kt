@@ -1,6 +1,7 @@
 package advent.day.day18
 
 import advent.AdventDay
+import advent.day.day18.domain.LeftRightNode
 import advent.day.day18.domain.Node
 
 class AdventDay18 : AdventDay() {
@@ -10,35 +11,19 @@ class AdventDay18 : AdventDay() {
     override fun run() {
         val trees = numbers.map { Node.fromString(null, it) }
 
-        val totalSum = trees.reduce { acc: Node, tree ->
-            val node = Node(null, acc, tree)
-
-            acc.parent = node
-            tree.parent = node
-
-            node.reduce()
-        }
-
-        println("Magnitude: ${totalSum.magnitude()}")
+        val totalSum = trees.reduce { acc: Node, tree -> LeftRightNode(null, acc, tree).reduce() }
+        println("Sum: $totalSum. Magnitude: ${totalSum.magnitude()}")
 
         val maxMagnitude = numbers
             .flatMapIndexed { i, node1 ->
-                numbers.subList(i + 1, numbers.size).flatMapIndexed { j, node2 ->
+                numbers.subList(i + 1, numbers.size).flatMapIndexed { _, node2 ->
                     mutableListOf(
                         Pair(Node.fromString(null, node1), Node.fromString(null, node2)),
                         Pair(Node.fromString(null, node2), Node.fromString(null, node1)),
                     )
                 }
-            }.map {
-                val first = it.first
-                val second = it.second
-                val node = Node(null, first, second)
-
-                first.parent = node
-                second.parent = node
-
-                node.reduce()
             }
+            .map { LeftRightNode(null, it.first, it.second).reduce() }
             .map { it.magnitude() }
             .maxOf { it }
 

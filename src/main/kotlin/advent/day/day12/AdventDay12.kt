@@ -3,84 +3,70 @@ package advent.day.day12
 import advent.AdventDay
 
 class AdventDay12 : AdventDay() {
+    private val fileText = getFileAsText("day12")
 
-    private val paths: MutableMap<String, MutableSet<String>> = hashMapOf()
+    private val paths = fileText
+        .split("\n")
+        .map { it.split("-") }
+        .flatMap { listOf(it[1] to it[0], it[0] to it[1]) }
+        .groupBy { it.first }
+        .mapValues { (_, values) -> values.map { it.second } }
 
     override fun run() {
-        getFileAsText("day12")
-            .split("\n")
-            .forEach {
-                val path = it.split("-")
-                addPath(path[0], path[1])
-                addPath(path[1], path[0])
-            }
-
-        val smallCaveSingleVisitPathCount = countPathsSmallCaveSingleVisit(emptySet(), "start", "start")
-        val smallCaveOneDoubleVisitPathCount = countPathsOneSmallCaveDoubleVisit(emptySet(), "start", "start")
-
+        val start = "start"
+        val smallCaveSingleVisitPathCount = countPathsOneVisitSmallCave(start, start)
         println("Number of paths visiting small caves only once: ${smallCaveSingleVisitPathCount.size}")
+
+        val smallCaveOneDoubleVisitPathCount = countPathsTwoVisitsOneSmallCave(start, start)
         println("Number of paths with one double small caves visit: ${smallCaveOneDoubleVisitPathCount.size}")
     }
 
-    private fun countPathsSmallCaveSingleVisit(paths: Set<String>, currentPath: String, currentCave: String): Set<String> {
+    private fun countPathsOneVisitSmallCave(path: String, currentCave: String): Set<String> {
         val validPaths: MutableSet<String> = mutableSetOf()
         if (currentCave == "end") {
-            return setOf(currentPath)
+            return setOf(path)
         }
 
         this.paths[currentCave]?.forEach { nextCave ->
-            val updatedPath = "$currentPath,$nextCave"
-
-            if (nextCave.uppercase() == nextCave || !currentPath.contains(nextCave)) {
-                validPaths.addAll(countPathsSmallCaveSingleVisit(paths, updatedPath, nextCave))
+            if (nextCave.uppercase() == nextCave || nextCave !in path) {
+                validPaths.addAll(countPathsOneVisitSmallCave("$path,$nextCave", nextCave))
             }
         }
 
         return validPaths
     }
 
-    private fun countPathsOneSmallCaveDoubleVisit(paths: Set<String>, currentPath: String, currentCave: String): Set<String> {
+    private fun countPathsTwoVisitsOneSmallCave(path: String, currentCave: String): Set<String> {
         val validPaths: MutableSet<String> = mutableSetOf()
         if (currentCave == "end") {
-            return setOf(currentPath)
+            return setOf(path)
         }
 
-        if (currentCave == "start" && currentPath != "start") {
+        if (currentCave == "start" && path != "start") {
             return emptySet()
         }
 
         this.paths[currentCave]?.forEach { nextCave ->
-            val updatedPath = "$currentPath,$nextCave"
+            val updatedPath = "$path,$nextCave"
 
             if (nextCave.uppercase() == nextCave) {
-                validPaths.addAll(countPathsOneSmallCaveDoubleVisit(paths, updatedPath, nextCave))
+                validPaths.addAll(countPathsTwoVisitsOneSmallCave(updatedPath, nextCave))
             } else {
-                val smallCavesVisits = currentPath
+                val smallCavesVisits = path
                     .split(",")
                     .filter { it.lowercase() == it && it !in arrayOf("start", "end") }
                     .groupingBy { it }
                     .eachCount()
-                val doubleVisit = smallCavesVisits.count { it.value == 2 } == 1
+                val secondVisit = smallCavesVisits.count { it.value == 2 } == 1
 
                 when (smallCavesVisits[nextCave]) {
-                    0, null -> validPaths.addAll(countPathsOneSmallCaveDoubleVisit(paths, updatedPath, nextCave))
-                    1 -> {
-                        if (!doubleVisit) {
-                            validPaths.addAll(countPathsOneSmallCaveDoubleVisit(paths, updatedPath, nextCave))
-                        }
-                    }
+                    0, null -> validPaths.addAll(countPathsTwoVisitsOneSmallCave(updatedPath, nextCave))
+                    1 -> { if (!secondVisit) validPaths.addAll(countPathsTwoVisitsOneSmallCave(updatedPath, nextCave)) }
                     else -> {}
                 }
             }
         }
 
         return validPaths
-    }
-
-    private fun addPath(start: String, finish: String) {
-        val paths = this.paths.getOrDefault(start, mutableSetOf())
-        paths.add(finish)
-
-        this.paths[start] = paths
     }
 }

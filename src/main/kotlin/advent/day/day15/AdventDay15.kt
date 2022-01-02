@@ -3,8 +3,6 @@ package advent.day.day15
 import advent.AdventDay
 import advent.day.day15.domain.Node
 import java.util.PriorityQueue
-import kotlin.Comparator
-import kotlin.collections.HashMap
 
 class AdventDay15 : AdventDay() {
     private val fileText = getFileAsText("day15")
@@ -29,30 +27,22 @@ class AdventDay15 : AdventDay() {
     }
 
     private fun findPathDijkstra(riskMap: List<List<Int>>): Int {
-        val start = System.currentTimeMillis()
+        val startTime = System.currentTimeMillis()
         val startNodeWithRisk = Node(0, 0, 0)
-        val endNode = Node(riskMap[0].size - 1, riskMap.size - 1)
+        val endNode = Node(riskMap[0].lastIndex, riskMap.lastIndex)
 
-        val nodesDistances = HashMap(
-            riskMap
-                .flatMapIndexed { y, hLine -> hLine.mapIndexed { x, _ -> Node(x, y) } }
-                .associateWith { node ->
-                    if (node.x == 0 && node.y == 0) {
-                        startNodeWithRisk
-                    } else {
-                        Node(-1, -1)
-                    }
-                }
-        )
+        val nodesDistances = riskMap
+            .flatMapIndexed { y, hLine -> hLine.mapIndexed { x, _ -> Node(x, y) } }
+            .associateWith { Node(-1, -1) }
+            .toMutableMap()
+        nodesDistances[Node(0, 0)] = startNodeWithRisk
 
-        val compareByRisk: Comparator<Node> = compareBy { it.risk }
-        val unsettledNodes = PriorityQueue(compareByRisk)
         val settledNodes: MutableSet<Node> = mutableSetOf()
-
+        val unsettledNodes = PriorityQueue(compareBy<Node> { it.risk })
         unsettledNodes.add(startNodeWithRisk)
+
         while (unsettledNodes.isNotEmpty()) {
             val currentNode = unsettledNodes.remove()
-            unsettledNodes.remove(currentNode)
 
             adjacentPointsOffsets
                 .map { Node(currentNode.x + it.first, currentNode.y + it.second) }
@@ -69,8 +59,8 @@ class AdventDay15 : AdventDay() {
             settledNodes.add(currentNode)
         }
 
-        val end = System.currentTimeMillis()
-        println("Execution time ${(end - start)}ms")
+        val endTime = System.currentTimeMillis()
+        println("Execution time ${(endTime - startTime)}ms")
         return nodesDistances[endNode]!!.risk
     }
 
@@ -79,10 +69,12 @@ class AdventDay15 : AdventDay() {
     }
 
     private fun duplicateMap(riskMap: List<List<Int>>, replicationFactor: Int): List<List<Int>> {
-        val subMapsToPlace = mutableMapOf(0 to riskMap)
-
-        (1..8).forEach { i ->
-            subMapsToPlace[i] = subMapsToPlace[i - 1]!!.map { it.map { risk -> if (risk == 9) 1 else risk + 1 } }
+        val subMapsToPlace: Map<Int, List<List<Int>>> = (0..8).associateWith { i ->
+            riskMap.map { hLine ->
+                hLine.map { risk ->
+                    if (risk + i > 9) (risk + i - 9) else risk + i
+                }
+            }
         }
 
         val duplicatedMap = List(replicationFactor * riskMap[0].size) { y ->
@@ -91,12 +83,11 @@ class AdventDay15 : AdventDay() {
                 val xRepetitionOffset = x / riskMap.size
 
                 val repetitionOffset = (yRepetitionOffset + xRepetitionOffset) % 9
-                val subMapToUse = subMapsToPlace[repetitionOffset]
 
                 val subY = y % riskMap[0].size
                 val subX = x % riskMap.size
 
-                subMapToUse!![subY][subX]
+                subMapsToPlace[repetitionOffset]!![subY][subX]
             }
         }
 

@@ -7,9 +7,8 @@ class AdventDay02 : AdventDay() {
     private val fileText = getFileAsText("day02")
     private val movements = fileText
         .split("\n")
-        .toList()
-        .map { mStr -> mStr.split(" ").let { Pair(Movement.fromName(it[0]), it[1].toInt()) } }
-        .toList()
+        .map { it.split(" ") }
+        .map { Pair(Movement.fromName(it[0]), it[1].toInt()) }
 
     override fun run() {
         runPart01()

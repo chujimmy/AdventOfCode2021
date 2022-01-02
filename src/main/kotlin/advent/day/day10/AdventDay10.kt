@@ -4,6 +4,11 @@ import advent.AdventDay
 import java.util.Stack
 
 class AdventDay10 : AdventDay() {
+    private val fileText = getFileAsText("day10")
+    private val navigationSubsystem = fileText
+        .split("\n")
+        .toList()
+
     private val pairs = setOf(
         Pair('(', ')'),
         Pair('[', ']'),
@@ -12,68 +17,57 @@ class AdventDay10 : AdventDay() {
     )
 
     override fun run() {
-        val fileText = getFileAsText("day10")
-
-        val navigationSubsystem: Array<String> = fileText
-            .split("\n")
-            .toTypedArray()
-
-        var syntaxErrorTotal = 0
-        val autoCompleteScores = mutableListOf<Long>()
-        navigationSubsystem.forEach { line ->
+        val scores: List<Pair<Int, Long>> = navigationSubsystem.map { line ->
             val stack = Stack<Char>()
-            run lit@{
-                line.forEach { char ->
+            var scorePair: Pair<Int, Long>? = null
 
-                    when (char) {
-                        '(', '[', '{', '<' -> stack.push(char)
-                        ')', ']', '}', '>' -> {
-                            val syntaxError = checkCorruptedLine(stack, char)
-                            if (syntaxError > 0) {
-                                syntaxErrorTotal += syntaxError
-                                return@lit
-                            }
+            for (char in line) {
+                when (char) {
+                    '(', '[', '{', '<' -> stack.push(char)
+                    ')', ']', '}', '>' -> {
+                        val score = getSyntaxErrorScore(stack, char)
+                        if (score > 0) {
+                            scorePair = Pair(score, 0)
+                            break
                         }
                     }
                 }
-
-                var autoCompleteTotal: Long = 0
-                while (stack.isNotEmpty()) {
-                    val char = stack.pop() ?: throw Exception("")
-
-                    val point = when (char) {
-                        '(' -> 1
-                        '[' -> 2
-                        '{' -> 3
-                        '<' -> 4
-                        else -> 0
-                    }
-
-                    autoCompleteTotal = (autoCompleteTotal * 5) + point
-                }
-
-                autoCompleteScores.add(autoCompleteTotal)
             }
+
+            scorePair ?: Pair(0, stack.foldRight(0L) { c, acc -> (acc * 5L) + getAutocompleteScore(c) })
         }
 
-        val middleScore = autoCompleteScores.sortedBy { it }[(autoCompleteScores.size / 2)]
-
-        println("Middle score: $middleScore")
+        val syntaxErrorScore = scores.filter { it.first != 0 }.sumOf { it.first }
+        println("Syntax error score: $syntaxErrorScore")
+        val autoCompleteScores = scores.filter { it.second != 0L }.map { it.second }.sortedBy { it }
+        val autoCompleteMiddleScore = autoCompleteScores[autoCompleteScores.size / 2]
+        println("Syntax error score: $autoCompleteMiddleScore")
     }
 
-    private fun checkCorruptedLine(stack: Stack<Char>, char: Char): Int {
-        val openingChunkChar = stack.peek() ?: return 0
+    private fun getSyntaxErrorScore(stack: Stack<Char>, char: Char): Int {
+        if (stack.isEmpty()) return 0
 
-        if (pairs.contains(Pair(openingChunkChar, char))) {
+        if (pairs.contains(Pair(stack.peek(), char))) {
             stack.pop()
+            return 0
         }
 
         return when (char) {
-            ')' -> if (openingChunkChar == '(') 0 else 3
-            ']' -> if (openingChunkChar == '[') 0 else 57
-            '}' -> if (openingChunkChar == '{') 0 else 1197
-            '>' -> if (openingChunkChar == '<') 0 else 25137
+            ')' -> 3
+            ']' -> 57
+            '}' -> 1197
+            '>' -> 25137
             else -> 0
+        }
+    }
+
+    private fun getAutocompleteScore(char: Char): Long {
+        return when (char) {
+            '(' -> 1L
+            '[' -> 2L
+            '{' -> 3L
+            '<' -> 4L
+            else -> 0L
         }
     }
 }

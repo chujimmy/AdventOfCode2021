@@ -4,13 +4,14 @@ import advent.AdventDay
 
 class AdventDay08 : AdventDay() {
     private val fileText = getFileAsText("day08")
-    private val line = fileText.split("\n").map { str ->
-        val io = str.split(" | ")
-        Pair(
-            io[0].split(" ").toSet().map { it.toCharArray().toSet() },
-            io[1].split(" ").toList().map { it.toCharArray().toSet() },
-        )
-    }
+    private val line = fileText.split("\n")
+        .map { it.split(" | ") }
+        .map { io ->
+            Pair(
+                io[0].split(" ").toSet().map { it.toCharArray().toSet() },
+                io[1].split(" ").toList().map { it.toCharArray().toSet() },
+            )
+        }
 
     override fun run() {
         val decodedNumbers = line.map { line ->
@@ -70,8 +71,9 @@ class AdventDay08 : AdventDay() {
                 .toIntOrNull()!!
         }
 
-        val totalOneFourSevenEight = decodedNumbers
-            .sumOf { it.toString().filter { d -> setOf('1', '4', '7', '8').contains(d) }.length }
+        val totalOneFourSevenEight = decodedNumbers.sumOf {
+            it.toString().filter { d -> d in setOf('1', '4', '7', '8') }.length
+        }
         println("Total of 1, 4, 7 or 8: $totalOneFourSevenEight")
 
         val totalSum = decodedNumbers.sumOf { it }

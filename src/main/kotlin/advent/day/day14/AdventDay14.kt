@@ -1,59 +1,49 @@
 package advent.day.day14
 
 import advent.AdventDay
-import java.math.BigInteger
 import java.util.regex.Pattern
 
 class AdventDay14 : AdventDay() {
+    private val fileContent = getFileAsText("day14").split(Pattern.compile("\n\n"))
+
     override fun run() {
-        val fileContent = getFileAsText("day14")
-            .split(Pattern.compile("\n\n"))
-
-        if (fileContent.size < 2) {
-            return
-        }
-
-        val polymer = fileContent[0]
-        val pairInsertion = fileContent[1]
+        val initialPolymer = fileContent[0]
+        val polymerInsertion = fileContent[1]
             .split("\n")
             .associate { it.split(" -> ")[0] to it.split(" -> ")[1] }
 
-        var pairCount: Map<String, BigInteger> = polymer
+        val polymerLastElement = initialPolymer[initialPolymer.lastIndex]
+        val polymerInitialCount = initialPolymer
             .windowed(2, 1)
-            .groupingBy { it }
-            .fold(BigInteger.ZERO) { accumulator, _ -> accumulator.add(BigInteger.ONE) }
+            .groupBy { it }
+            .mapValues { entry -> entry.value.size.toLong() }
 
-        (1..40).forEach { i ->
-            pairCount = pairCount
-                .map { entry ->
-                    val pair = entry.key
+        (1..40).fold(polymerInitialCount) { acc, i ->
+            val polymerCountWithInsert = acc
+                .flatMap { entry ->
+                    val polymerPair = entry.key
                     val count = entry.value
 
-                    "${pair.substring(0, 1)}${pairInsertion[pair]}${pair.substring(1)}"
+                    "${polymerPair.first()}${polymerInsertion[polymerPair]}${polymerPair.last()}"
                         .windowed(2, 1)
-                        .associateWith { count }
-                }.fold(emptyMap()) { acc, map ->
-                    acc
-                        .keys.union(map.keys)
-                        .associateWith {
-                            acc.getOrDefault(it, BigInteger.ZERO).add(map.getOrDefault(it, BigInteger.ZERO))
-                        }
+                        .map { Pair(it, count) }
                 }
+                .groupBy { it.first }
+                .mapValues { entry -> entry.value.sumOf { it.second } }
 
-            val elementCount = pairCount
+            val sortedElementCount = polymerCountWithInsert
                 .map { Pair(it.key[0], it.value) }
-                .groupingBy { it.first }
-                .fold(BigInteger.ZERO) { acc, pair -> acc.add(pair.second) }
-                .toMutableMap()
-
-            val lastElement = polymer[polymer.lastIndex]
-            elementCount[lastElement] = elementCount.getOrDefault(lastElement, BigInteger.ZERO).add(BigInteger.ONE)
-
-            val sortedElement = elementCount
+                .groupBy { it.first }
+                .mapValues { e ->
+                    val elementSum = e.value.sumOf { it.second }
+                    if (e.key == polymerLastElement) elementSum + 1 else elementSum
+                }
                 .values
-                .sortedBy { it.times(BigInteger.valueOf(-1)) }
+                .sortedByDescending { it }
 
-            println("Step $i Value: ${sortedElement.first() - sortedElement.last()}")
+            println("Step $i Value: ${sortedElementCount.first() - sortedElementCount.last()}")
+
+            polymerCountWithInsert
         }
     }
 }

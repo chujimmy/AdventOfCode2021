@@ -4,7 +4,7 @@ import advent.AdventDay
 
 class AdventDay03 : AdventDay() {
     private val fileText = getFileAsText("day03")
-    private val binaryNumbers = fileText.split("\n").toList()
+    private val binaryNumbers = fileText.split("\n")
 
     override fun run() {
         runPart01()
