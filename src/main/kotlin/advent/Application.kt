@@ -1,7 +1,7 @@
 package advent
 
-import advent.day.day20.AdventDay20
+import advent.day.day21.AdventDay21
 
 fun main(args: Array<String>) {
-    AdventDay20().run()
+    AdventDay21().run()
 }

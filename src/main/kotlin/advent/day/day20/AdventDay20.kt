@@ -39,7 +39,7 @@ class AdventDay20 : AdventDay() {
                     imageWithPaddedSpace[middlePixelY][middlePixelX] = imageEnhancementAlgorithm[intValue]
                 }
             }
-            val imageStr = imageWithPaddedSpace.joinToString("\n") { it.joinToString("")}
+            val imageStr = imageWithPaddedSpace.joinToString("\n") { it.joinToString("") }
             println("Step $step:\n$imageStr\n ")
 
             imageWithPaddedSpace
