@@ -1,220 +1,116 @@
 package advent.day.day19
 
 import advent.AdventDay
-import advent.day.day19.domain.Axis
+import advent.day.day19.domain.*
 import advent.day.day19.domain.Axis.*
-import advent.day.day19.domain.Coordinates
-import advent.day.day19.domain.Rotation
-import advent.day.day19.domain.Scanner
+import advent.day.day19.domain.Orientation.*
+import extension.list.combination
+import extension.list.combinationList
+
 
 class AdventDay19 : AdventDay() {
     private val fileText = getFileAsText("day19")
-    private val scannersText = fileText
+    private val scannersList = fileText
         .split("\n\n")
-        .toList()
-
-    private val scannersList = scannersText
         .map {  it.split("\n") }
-        .map {
-            Pair(
-                it.subList(0, 1)[0].replace("-", "").trim().split(" ")[1].toInt(),
-                it.subList(1, it.size),
-            )
-        }
-        .map { pair ->
-            val scannerReadings = pair.second
-                .map { it.split(",") }
-                .map { Coordinates(it[0].toDouble(), it[1].toDouble(), it[2].toDouble() ) }
-            Scanner(pair.first, scannerReadings)
-        }
+        .map { Pair(it.subList(0, 1)[0], it.subList(1, it.size)) }
+        .map { Pair(it.first.replace(Regex("[a-zA-z -]"), "").toInt(), it.second) }
+        .map { Scanner(it.first, it.second.map { str -> Coordinates.fromString(str)}) }
+
+    private val rotations = listOf(
+        Rotation(POSITIVE, X, POSITIVE, Y, POSITIVE, Z),
+        Rotation(POSITIVE, X, POSITIVE, Z, NEGATIVE, Y),
+        Rotation(POSITIVE, X, NEGATIVE, Y, NEGATIVE, Z),
+        Rotation(POSITIVE, X, NEGATIVE, Z, POSITIVE, Y),
+        Rotation(POSITIVE, Z, POSITIVE, Y, NEGATIVE, X),
+        Rotation(POSITIVE, Z, NEGATIVE, X, NEGATIVE, Y),
+        Rotation(POSITIVE, Z, NEGATIVE, Y, POSITIVE, X),
+        Rotation(POSITIVE, Z, POSITIVE, X, POSITIVE, Y),
+        Rotation(NEGATIVE, X, POSITIVE, Y, NEGATIVE, Z),
+        Rotation(NEGATIVE, X, POSITIVE, Z, POSITIVE, Y),
+        Rotation(NEGATIVE, X, NEGATIVE, Y, POSITIVE, Z),
+        Rotation(NEGATIVE, X, NEGATIVE, Z, NEGATIVE, Y),
+        Rotation(NEGATIVE, Z, POSITIVE, Y, POSITIVE, X),
+        Rotation(NEGATIVE, Z, NEGATIVE, X, POSITIVE, Y),
+        Rotation(NEGATIVE, Z, NEGATIVE, Y, NEGATIVE, X),
+        Rotation(NEGATIVE, Z, POSITIVE, X, NEGATIVE, Y),
+        Rotation(POSITIVE, Y, NEGATIVE, X, POSITIVE, Z),
+        Rotation(POSITIVE, Y, POSITIVE, Z, POSITIVE, X),
+        Rotation(POSITIVE, Y, POSITIVE, X, NEGATIVE, Z),
+        Rotation(POSITIVE, Y, NEGATIVE, Z, NEGATIVE, X),
+        Rotation(NEGATIVE, Y, NEGATIVE, X, NEGATIVE, Z),
+        Rotation(NEGATIVE, Y, POSITIVE, Z, NEGATIVE, X),
+        Rotation(NEGATIVE, Y, POSITIVE, X, POSITIVE, Z),
+        Rotation(NEGATIVE, Y, NEGATIVE, Z, POSITIVE, X),
+    )
 
     override fun run() {
-        val scannerPositions = mutableMapOf<Int, Pair<Coordinates, Triple<Int, Int, Int>>>()
-        scannerPositions[0] = Pair(Coordinates(0.0, 0.0, 0.0), Triple(1, 1, 1))
-
-        val beaconCombinationsPerScanner = scannersList
-            .map { currentScanner ->
-                val combinations = currentScanner.readings.flatMapIndexed { i, firstBeacon ->
-                    currentScanner.readings.subList(i + 1, currentScanner.readings.size).mapIndexed { _, secondBeacon ->
-                        Pair(firstBeacon, secondBeacon)
-                    }
-                }
-                Pair(currentScanner.id, combinations)
-            }
-
-
-        val scannersCombinations = beaconCombinationsPerScanner.flatMapIndexed { i, firstScanner ->
-            beaconCombinationsPerScanner.subList(i + 1, beaconCombinationsPerScanner.size).map { secondScanner ->
-                listOf(firstScanner, secondScanner)
-            }
-        }
-
-        for (scannerPair in scannersCombinations) {
-            val scannerOneId = scannerPair[0].first
-            val scannerOneBeaconCombinations = scannerPair[0].second
-            val scannerTwoId = scannerPair[1].first
-            val scannerTwoBeaconCombinations = scannerPair[1].second
-
-            if (scannerOneId !in scannerPositions || scannerTwoId in scannerPositions) {
-                continue
-            }
-
-            val beaconPairWithSameDistance: Map<Double, List<Pair<Coordinates, Coordinates>>> = scannerOneBeaconCombinations
-                .plus(scannerTwoBeaconCombinations)
-                .groupBy { it.first.getDistance(it.second) }
-                .filter { it.value.size > 1 }
-
-            val beaconsInScannerOnePresentInScannerTwo = beaconPairWithSameDistance.values
-                .flatMap { setOf(it[0].first, it[0].second) }
-                .toSet()
-
-            if (beaconsInScannerOnePresentInScannerTwo.size < 12) {
-                continue
-            }
-
-            val beaconsCoordinatesMap = mutableMapOf<Coordinates, Coordinates>()
-
-            beaconsInScannerOnePresentInScannerTwo.forEach { beaconCoordinatesInScannerOne ->
-                val beaconCoordinatesInScannerTwo = beaconPairWithSameDistance
-                    .values
-                    .filter { beaconCoordinatesInScannerOne in listOf(it[0].first, it[0].second) }
-                    .take(2)
-                    .flatMap { listOf(it[1].first, it[1].second) }
-                    .groupingBy { it }
-                    .eachCount()
-                    .filter { it.value == 2 }
-                    .keys
-                    .first()
-
-                beaconsCoordinatesMap[beaconCoordinatesInScannerOne] = beaconCoordinatesInScannerTwo
-            }
-
-            val scannerTwoCoordinates = findScannerCoordinates(beaconsCoordinatesMap)
-
-            if (scannerTwoCoordinates != null) {
-                scannerPositions[scannerTwoId] = scannerTwoCoordinates
-            }
-            println("scannerPositions $scannerPositions")
-        }
-
-    }
-
-    private fun findScannerCoordinates(beaconsCoordinatesMap: Map<Coordinates, Coordinates>): Coordinates? {
-        val rotations = setOf(
-            listOf(Rotation(X, 1), Rotation(Y, 1), Rotation(Z, 1)),
-            listOf(Rotation(X, 1), Rotation(Z, 1), Rotation(Y, -1)),
-            listOf(Rotation(X, 1), Rotation(Y, -1), Rotation(Z, -1)),
-            listOf(Rotation(X, 1), Rotation(Z, -1), Rotation(Y, 1)),
-            listOf(Rotation(Z, 1), Rotation(Y, 1), Rotation(X, -1)),
-            listOf(Rotation(Z, 1), Rotation(X, -1), Rotation(Y, -1)),
-            listOf(Rotation(Z, 1), Rotation(Y, -1), Rotation(X, 1)),
-            listOf(Rotation(Z, 1), Rotation(X, 1), Rotation(Y, 1)),
-            listOf(Rotation(X, -1), Rotation(Y, 1), Rotation(Z, -1)),
-            listOf(Rotation(X, -1), Rotation(Z, 1), Rotation(Y, 1)),
-            listOf(Rotation(X, -1), Rotation(Y, -1), Rotation(Z, 1)),
-            listOf(Rotation(X, -1), Rotation(Z, -1), Rotation(Y, -1)),
-            listOf(Rotation(Z, -1), Rotation(Y, 1), Rotation(X, 1)),
-            listOf(Rotation(Z, -1), Rotation(X, -1), Rotation(Y, 1)),
-            listOf(Rotation(Z, -1), Rotation(Y, -1), Rotation(X, -1)),
-            listOf(Rotation(Z, -1), Rotation(X, 1), Rotation(Y, -1)),
-            listOf(Rotation(Y, 1), Rotation(X, -1), Rotation(Z, 1)),
-            listOf(Rotation(Y, 1), Rotation(Z, 1), Rotation(X, 1)),
-            listOf(Rotation(Y, 1), Rotation(X, 1), Rotation(Z, -1)),
-            listOf(Rotation(Y, 1), Rotation(Z, -1), Rotation(X, -1)),
-            listOf(Rotation(Y, -1), Rotation(X, -1), Rotation(Z, -1)),
-            listOf(Rotation(Y, -1), Rotation(Z, 1), Rotation(X, -1)),
-            listOf(Rotation(Y, -1), Rotation(X, 1), Rotation(Z, 1)),
-            listOf(Rotation(Y, -1), Rotation(Z, -1), Rotation(X, 1)),
+        val scannersInfo = mutableMapOf(
+            0 to Pair(Coordinates(0.0, 0.0, 0.0), rotations[0]),
         )
 
-        val coordinates = beaconsCoordinatesMap
-            .entries
-            .fold(emptySet<Pair<Coordinates, List<Rotation>>>()) { acc, entry ->
-                val beaconCoordinatesScannerOne = entry.key
-                val beaconCoordinatesScannerTwo = entry.value
-                val scannerTwoPossibleCoordinates = rotations.map {
-                    val c = Coordinates(
-                        beaconCoordinatesScannerOne.x - getValue(X, it, beaconCoordinatesScannerTwo),
-                        beaconCoordinatesScannerOne.y - getValue(Y, it, beaconCoordinatesScannerTwo),
-                        beaconCoordinatesScannerOne.z - getValue(Z, it, beaconCoordinatesScannerTwo),
-                    )
-                    Pair(c, it)
-                }.toSet()
-
-                if (acc.isEmpty()) {
-                    scannerTwoPossibleCoordinates
-                } else {
-                    acc.intersect(scannerTwoPossibleCoordinates)
+        while (scannersInfo.size != scannersList.size) {
+            for (scannerPair in scannersList.combinationList()) {
+                if (scannersInfo.keys.intersect(scannerPair.map { it.id }).isEmpty() ) {
+                    continue
                 }
+
+                val baseScannerIndex = scannerPair.indexOfFirst { scannersInfo.containsKey(it.id) }
+                val baseScannerId = scannerPair[baseScannerIndex].id
+                val baseScannerBeaconsCombinations = scannerPair[baseScannerIndex].beacons.combination()
+                val challengerScannerId = scannerPair[(baseScannerIndex + 1) % 2].id
+                val challengerScannerBeaconsCombinations = scannerPair[(baseScannerIndex + 1) % 2].beacons.combination()
+
+                val beaconCombinationPairsWithSameDistance = baseScannerBeaconsCombinations
+                    .plus(challengerScannerBeaconsCombinations)
+                    .groupBy { it.first.getDistance(it.second) }
+                    .filter { it.value.size == 2 }
+
+                val beaconsMap = beaconCombinationPairsWithSameDistance.values
+                    .flatMap { setOf(it[0].first, it[0].second) }
+                    .toSet()
+                    .associateWith { beaconInBaseScanner ->
+                        beaconCombinationPairsWithSameDistance
+                            .filter { beaconInBaseScanner in listOf(it.value[0].first, it.value[0].second) }
+                            .flatMap { listOf(it.value[1].first, it.value[1].second) }
+                            .groupingBy { it }
+                            .eachCount()
+                            .entries
+                            .reduce { a, c -> if (c.value > a.value) c else a }
+                            .takeIf { it.value > 1 }?.key
+                    }
+                    .filter { it.value != null } as Map<Coordinates, Coordinates>
+
+                if (beaconsMap.size < 12) {
+                    continue
+                }
+
+                println("Current scanner: ${scannerPair.map { it.id }}")
+                val baseScannerInfo = scannersInfo.getValue(baseScannerId)
+                val challengerScannerInfo = findScannerInfo(baseScannerInfo, beaconsMap)
+
+                scannersInfo[challengerScannerId] = challengerScannerInfo
+                println("scannerPositions ${scannersInfo}\n---------\n")
             }
 
-        if (coordinates.isNotEmpty()) {
-            println("Found coordinates of a scanner ${coordinates.first()}")
-            return coordinates.first()
         }
-//        val offsets = setOf(
-//            Triple(1,1,1),
-//            Triple(1,1,-1),
-//            Triple(1,-1,1),
-//            Triple(1,-1,-1),
-//            Triple(-1,1,1),
-//            Triple(-1,1,-1),
-//            Triple(-1,-1,1),
-//            Triple(-1,-1,-1),
-//        )
-
-//        var possibleCoordinates = mutableListOf<Pair<Coordinates, Triple<Int, Int, Int>>>()
-//
-//        val keys = beaconsCoordinatesMap.keys.toMutableList()
-//        val key = keys.removeFirst()
-//        val value = beaconsCoordinatesMap[key]!!
-//
-//        possibleCoordinates.addAll(offsets.map { triple ->
-//            Pair(
-//                Coordinates(
-//                    key.x + (value.x * triple.first),
-//                    key.y + (value.y * triple.second),
-//                    key.z + (value.z * triple.third),
-//                ),
-//                triple
-//            )
-//        })
-
-//        while(possibleCoordinates.size > 1) {
-//            val k = keys.removeFirst()
-//            val v = beaconsCoordinatesMap[k]!!
-//            val aaa = offsets.map { triple ->
-//
-//                Pair(
-//                    Coordinates(
-//                        k.x + (v.x * triple.first),
-//                        k.y + (v.y * triple.second),
-//                        k.z + (v.z * triple.third),
-//                    ),
-//                    triple
-//                )
-//            }.toList()
-//
-//            possibleCoordinates = (possibleCoordinates.intersect(aaa)).toMutableList()
-//        }
-
-//        if (possibleCoordinates.isNotEmpty()) {
-//            println("Found coordinates of a scanner ${possibleCoordinates[0]}")
-//            return possibleCoordinates[0]
-//        }
-
-        return null
     }
 
-    private fun getValue(axis: Axis, rotationList: List<Rotation>, coordinates: Coordinates): Double {
-        val index = rotationList.indexOfFirst { r -> r.axis == axis }
-        val facing = rotationList[index].rotation
+    private fun findScannerInfo(
+        baseScannerInfo: Pair<Coordinates, Rotation>, beaconsMap: Map<Coordinates, Coordinates>
+    ): Pair<Coordinates, Rotation> {
+        val baseScannerCoordinates = baseScannerInfo.first
+        val baseScannerRotation = baseScannerInfo.second
+        val challengerScannerInfo  = beaconsMap
+            .entries
+            .map { rotations.map { r -> Pair(it.key - it.value.translateCoordinates(r), r) } }
+            .reduce { acc, list -> acc.intersect(list).toList() }
+            .first()
 
-        return when(index) {
-            0 -> coordinates.x * facing
-            1 -> coordinates.y * facing
-            2 -> coordinates.z * facing
-            else -> 0.0
-        }
+        val tmp = baseScannerInfo.first + challengerScannerInfo.first.translateCoordinates(baseScannerInfo.second)
+        println("Info for challenger scanner $challengerScannerInfo")
+        println("Base Scanner info: ${baseScannerInfo.first} ${baseScannerInfo.second}")
+        println("Challenger Scanner Absolute Coordinates: $tmp ${challengerScannerInfo.second}")
+        return Pair(tmp, challengerScannerInfo.second)
     }
 }
