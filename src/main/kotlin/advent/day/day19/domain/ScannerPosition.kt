@@ -9,14 +9,3 @@ class ScannerPosition(
         return "(($coordinatesFromMiddleScanner), ($rotationFromMiddleScanner), $middleScannerId)"
     }
 }
-
-
-//class ScannerPosition(
-//    val coordinatesToBaseScanner: Coordinates,
-//    val rotationFromMiddleScanner: Rotation,
-//    val middleScannerId: Int,
-//) {
-//    override fun toString(): String {
-//        return "(($coordinatesToBaseScanner), ($rotationFromMiddleScanner), $middleScannerId)"
-//    }
-//}

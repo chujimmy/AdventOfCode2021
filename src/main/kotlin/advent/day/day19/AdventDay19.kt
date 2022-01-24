@@ -45,19 +45,29 @@ class AdventDay19 : AdventDay() {
     )
 
     override fun run() {
-        scannersList[0].position = ScannerPosition(Coordinates(0.0, 0.0, 0.0), rotations[0], 0)
+//        scannersList[0].position = ScannerPosition(Coordinates(0.0, 0.0, 0.0), rotations[0], 0)
+        val scannersAbsCoordInfo = mutableMapOf(
+            0 to ScannerPosition(Coordinates(0.0, 0.0, 0.0), rotations[0], 0)
+        )
 
-        while (scannersList.any { it.position == null } ) {
+//        while (scannersList.any { it.position == null } ) {
+        while (scannersAbsCoordInfo.size != scannersList.size) {
             for (scannerPair in scannersList.combinationList()) {
-                if (scannerPair.mapNotNull { it.position }.size != 1) {
+                val scannerPairIds = scannerPair.map { it.id }
+                val knownScannerIds = scannerPairIds.intersect(scannersAbsCoordInfo.keys)
+                if (knownScannerIds.size != 1) {
+//                if (scannerPair.map { it.id }.intersect(scannersAbsCoordInfo.keys).size != 1) {
                     continue
                 }
 
-                val knownScannerId = scannerPair.filter { it.position != null }.map { it.id }.intersect(scannerPair.map { it.id }).first()
+                val knownScannerId = knownScannerIds.first()
+//                val knownScannerId = scannerPair.filter { it.position != null }.map { it.id }.intersect(scannerPair.map { it.id }).first()
                 val knownScanner = scannersList[knownScannerId]
 
-                val newScannerId = scannersList.filter { it.position == null }.map { it.id }.intersect(scannerPair.map { it.id }).first()
+                val newScannerId = scannerPairIds.minus(knownScannerId).first()
                 val newScanner = scannersList[newScannerId]
+
+                println("knownScannerIds $knownScannerIds scannerPairIds $scannerPairIds knownScannerId $knownScannerId newScannerId $newScannerId ")
 
                 val beaconCombinationPairsWithSameDistance = knownScanner.beacons.combination()
                     .plus(newScanner.beacons.combination())
@@ -83,88 +93,52 @@ class AdventDay19 : AdventDay() {
                     continue
                 }
 
-                newScanner.position = findScannerInfo(knownScannerId, scannersList, beaconsMap)
+                scannersAbsCoordInfo[newScannerId] = findScannerInfo(knownScannerId, beaconsMap)
+//                newScanner.position = findScannerInfo(knownScannerId, beaconsMap)
             }
         }
 
         println("scannerPositions \n${scannersList.joinToString("\n")}\n---------\n")
 
-        val scannersAbsoluteCoordinates = scannersList
-            .filter {it.position != null }
+        val scannersAbsoluteCoordinates = scannersAbsCoordInfo
+            .values
             .map {
-                val aa = it.position!!
-                getScannerAbsoluteCoordinate(aa.coordinatesFromMiddleScanner, aa.middleScannerId, scannersList)
+                getAbsoluteCoordinate(it.coordinatesFromMiddleScanner, it.middleScannerId, scannersAbsCoordInfo)
         }
 
-        println("aaaa ${scannersAbsoluteCoordinates.joinToString("\n") }")
+        val beaconsCoordinates = scannersList
+            .flatMapIndexed { i, it ->
+                it.beacons.map { beacon -> getAbsoluteCoordinate(beacon, i, scannersAbsCoordInfo) }
+            }
+            .toSet()
+
+        println("Number of unique beacons ${beaconsCoordinates.size}")
     }
 
-    private fun getScannerAbsoluteCoordinate(
+    private fun getAbsoluteCoordinate(
         newScannerCoordinatesFromKnownScannerPOV: Coordinates,
         knownScannerId: Int,
-        scannersList: List<Scanner>,
+        scannersList: Map<Int, ScannerPosition>,
     ): Coordinates {
-        println("newScannerCoordinatesFromKnownScannerPOV $newScannerCoordinatesFromKnownScannerPOV")
         if (knownScannerId == 0) {
             return newScannerCoordinatesFromKnownScannerPOV
         }
 
-        val nextScannerInfo = scannersList[knownScannerId].position ?: return Coordinates(0.0, 0.0, 0.0)
+        val nextScannerInfo = scannersList.getValue(knownScannerId)
 
         val rotationToApply = nextScannerInfo.rotationFromMiddleScanner
-//        val newMiddle = scannersList[middleScannerId]!!.position!!.middleScannerId
-//        val newRotation = scannersList[newMiddle]!!.position!!.rotationFromMiddleScanner
 
         val tmp = newScannerCoordinatesFromKnownScannerPOV.translateCoordinates(rotationToApply) + nextScannerInfo.coordinatesFromMiddleScanner
-        println("aaaa $tmp")
-//        return nextScannerInfo.coordinatesFromMiddleScanner + aa(tmp, nextScannerInfo.middleScannerId, scannersList)
-        return getScannerAbsoluteCoordinate(tmp, nextScannerInfo.middleScannerId, scannersList)
-
-//        val tmp = baseScannerInfo.first + challengerScannerInfo.first.translateCoordinates(baseScannerInfo.second)
-//        return coordinates + aa(coordinates, middleScannerId)
-
+        return getAbsoluteCoordinate(tmp, nextScannerInfo.middleScannerId, scannersList)
     }
 
-    private fun findScannerInfo(
-        knownScannerId: Int,
-        scannersList: List<Scanner>,
-        beaconsMap: Map<Coordinates, Coordinates>,
-    ): ScannerPosition {
-        val knownScanner = scannersList[knownScannerId]
-        val newScannerInfo  = beaconsMap
+    private fun findScannerInfo(knownScannerId: Int, beaconsMap: Map<Coordinates, Coordinates>): ScannerPosition {
+        val newScannerInfo = beaconsMap
             .entries
             .map { rotations.map { r -> Pair(it.key - it.value.translateCoordinates(r), r) } }
             .reduce { acc, list -> acc.intersect(list).toList() }
             .first()
 
-        val newScannerCoordinatesFromKnownScannerPOV = newScannerInfo.first
-        println("newScannerCoordinatesFromKnownScannerPOV $newScannerCoordinatesFromKnownScannerPOV")
-
-
-//        val initialRotationFromKnownScanner = knownScanner.position!!
-//        println("initialRotationFromKnownScanner,$initialRotationFromKnownScanner")
-
-//        var bababa = newScannerInfo.first.translateCoordinates(knownScanner.position!!.rotationFromMiddleScanner)
-//        var tmp: Coordinates = knownScanner.position!!.coordinatesToBaseScanner - bababa
-//        if (initialRotationFromKnownScanner.middleScannerId != 0) {
-//            tmp = knownScanner.position!!.coordinatesToBaseScanner - (newScannerInfo.first.translateCoordinates(initialRotationFromKnownScanner.rotationFromMiddleScanner))
-//        } else {
-//            tmp = knownScanner.position!!.coordinatesToBaseScanner + bababa
-//
-//        }
-
-
-
-//        if (initialRotationFromKnownScanner.middleScannerId != 0) {
-//            tmp = tmp.translateCoordinates(initialRotationFromKnownScanner.rotationFromMiddleScanner)
-//        }
-
-
-//        println("New Scanner coordinates from base scanner?? $tmp")
-//        println("tmptmptmptmp $tmp")
-//        println("Info for challenger scanner $newScannerInfo")
-//        println("Base Scanner info: ${scannersList[middleScannerId].position!!.coordinatesToBaseScanner} ${scannersList[middleScannerId].position!!.rotationFromMiddleScanner}")
-//        println("Challenger Scanner Absolute Coordinates: $tmp ${newScannerInfo.second}")
         return ScannerPosition(newScannerInfo.first, newScannerInfo.second, knownScannerId)
     }
 }
