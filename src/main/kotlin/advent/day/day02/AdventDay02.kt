@@ -20,31 +20,29 @@ class AdventDay02 : AdventDay() {
     }
 
     private fun runPart01() {
-        val position = movements
-            .fold(Position()) { acc, movement ->
-                val units = movement.second
-                val multiplier = movement.first.multiplier
+        val position = movements.fold(Position()) { acc, movement ->
+            val units = movement.second
+            val multiplier = movement.first.multiplier
 
-                when (movement.first) {
-                    UP, DOWN -> { Position(acc.hPosition, acc.depth + units * multiplier) }
-                    FORWARD -> { Position(acc.hPosition + units, acc.depth) }
-                }
+            when (movement.first) {
+                UP, DOWN -> { Position(acc.hPosition, acc.depth + units * multiplier) }
+                FORWARD -> { Position(acc.hPosition + units, acc.depth) }
             }
+        }
 
         println("Result: ${position.hPosition * position.depth}")
     }
 
     private fun runPart02() {
-        val position = movements
-            .fold(Position()) { p, movement ->
-                val units = movement.second
-                val multiplier = movement.first.multiplier
+        val position = movements.fold(Position()) { p, movement ->
+            val units = movement.second
+            val multiplier = movement.first.multiplier
 
-                when (movement.first) {
-                    UP, DOWN -> { Position(p.hPosition, p.depth, p.aim + (units * multiplier)) }
-                    FORWARD -> { Position(p.hPosition + units, p.depth + (p.aim * units), p.aim) }
-                }
+            when (movement.first) {
+                UP, DOWN -> { Position(p.hPosition, p.depth, p.aim + (units * multiplier)) }
+                FORWARD -> { Position(p.hPosition + units, p.depth + (p.aim * units), p.aim) }
             }
+        }
 
         println("Result: ${position.depth * position.hPosition}")
     }

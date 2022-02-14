@@ -54,13 +54,12 @@ class AdventDay03 : AdventDay() {
             return binaryNumbers
         }
 
-        val filteredBinaryNumbers = binaryNumbers
-            .filter { number ->
-                val bitsCount = countBitOccurrences(binaryNumbers)
-                val charToCheck = if (useMostCommonBit) bitsCount.first else bitsCount.second
+        val filteredBinaryNumbers = binaryNumbers.filter { number ->
+            val bitsCount = countBitOccurrences(binaryNumbers)
+            val charToCheck = if (useMostCommonBit) bitsCount.first else bitsCount.second
 
-                number[bitIndexToCheck] == charToCheck[bitIndexToCheck]
-            }
+            number[bitIndexToCheck] == charToCheck[bitIndexToCheck]
+        }
 
         return findRating(filteredBinaryNumbers, bitIndexToCheck + 1, useMostCommonBit)
     }
@@ -69,16 +68,14 @@ class AdventDay03 : AdventDay() {
         val bitsPerNumber = binaryNumbers[0].length
         val totalBinaryNumbers = binaryNumbers.size
 
-        return (0 until bitsPerNumber)
-            .map { bitPosition ->
-                val ones = binaryNumbers.count { it[bitPosition] == '1' }
-                val mostCommonChar = if (ones * 2 >= totalBinaryNumbers) '1' else '0'
-                val leastCommonChar = if (ones * 2 >= totalBinaryNumbers) '0' else '1'
+        return (0 until bitsPerNumber).map { bitPosition ->
+            val ones = binaryNumbers.count { it[bitPosition] == '1' }
+            val mostCommonChar = if (ones * 2 >= totalBinaryNumbers) '1' else '0'
+            val leastCommonChar = if (ones * 2 >= totalBinaryNumbers) '0' else '1'
 
-                Pair(hashMapOf(bitPosition to mostCommonChar), hashMapOf(bitPosition to leastCommonChar))
-            }
-            .fold(Pair(emptyMap(), emptyMap())) { acc, pair ->
-                Pair(acc.first.plus(pair.first), acc.second.plus(pair.second))
-            }
+            Pair(hashMapOf(bitPosition to mostCommonChar), hashMapOf(bitPosition to leastCommonChar))
+        }.fold(Pair(emptyMap(), emptyMap())) { acc, pair ->
+            Pair(acc.first.plus(pair.first), acc.second.plus(pair.second))
+        }
     }
 }

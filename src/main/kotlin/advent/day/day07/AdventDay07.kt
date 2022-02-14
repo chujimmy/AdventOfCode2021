@@ -2,6 +2,7 @@ package advent.day.day07
 
 import advent.AdventDay
 import kotlin.math.abs
+import kotlin.math.min
 
 class AdventDay07 : AdventDay() {
     private val fileText = getFileAsText("day07")
@@ -26,32 +27,25 @@ class AdventDay07 : AdventDay() {
     }
 
     private fun runPart02() {
-        val fuelConsumptions: MutableMap<Int, Int> = mutableMapOf()
-        var summedFuelConsumption = 0
-        (0..furthestCrabPosition).forEach { position ->
-            summedFuelConsumption += position
-            fuelConsumptions[position] = summedFuelConsumption
-        }
+        val map = mapOf<Int, Int>()
+        val fuelConsumptions = (0..furthestCrabPosition)
+            .fold(map) { acc, position -> acc + mapOf(position to ((acc.maxOfOrNull { it.value } ?: 0) + position)) }
 
         val minFuel = calculateOptimalCrabsPosition(fuelConsumptions)
         println("Min Fuel Part 2: $minFuel")
     }
 
     private fun calculateOptimalCrabsPosition(fuelConsumptions: Map<Int, Int>): Long {
-        val optimalCrabPositions: MutableMap<Int, Long> = mutableMapOf()
+        return (0..furthestCrabPosition)
+            .fold(Long.MAX_VALUE) { currentMinEnergy, position ->
+                val totalFuelRequired = crabPositions
+                    .entries
+                    .fold(0L) { acc, pair ->
+                        val distance = abs(pair.key - position)
+                        acc + (pair.value * fuelConsumptions.getValue(distance))
+                    }
 
-        (0..furthestCrabPosition).forEach { position ->
-            val totalFuelRequired = crabPositions
-                .map { it }
-                .fold(0L) { acc, pair ->
-                    val distance = abs(pair.key - position)
-
-                    acc + (pair.value * fuelConsumptions.getOrDefault(distance, 0))
-                }
-
-            optimalCrabPositions[position] = totalFuelRequired
-        }
-
-        return optimalCrabPositions.values.minOrNull()!!
+                min(currentMinEnergy, totalFuelRequired)
+            }
     }
 }

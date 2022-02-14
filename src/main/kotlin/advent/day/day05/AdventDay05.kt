@@ -12,13 +12,6 @@ class AdventDay05 : AdventDay() {
         .map { it.split(" -> ") }
         .map { movement -> Pair(Coordinates.fromString(movement[0]), Coordinates.fromString(movement[1])) }
 
-    private val furthestPoint = ventMovements
-        .fold(0) { acc, movement ->
-            listOf(
-                acc, movement.first.x, movement.first.y, movement.second.x, movement.second.y
-            ).maxOrNull() ?: 0
-        }
-
     private val furthestX = ventMovements.fold(0) { acc, m -> max(acc, max(m.first.x, m.second.x)) }
     private val furthestY = ventMovements.fold(0) { acc, m -> max(acc, max(m.first.y, m.second.y)) }
 

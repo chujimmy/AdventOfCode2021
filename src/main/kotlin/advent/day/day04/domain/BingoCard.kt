@@ -2,14 +2,7 @@ package advent.day.day04.domain
 
 import java.lang.StrictMath.sqrt
 
-class BingoCard(numbers: String) {
-    var card = numbers
-        .replace("\n", " ")
-        .replace("  ", " ")
-        .split(" ")
-        .filter { it.matches(Regex("\\d+")) }
-        .map { it.toInt() to false }
-
+class BingoCard(var card: List<Pair<Int, Boolean>>) {
     private val gridSize = sqrt(card.size.toDouble()).toInt()
 
     fun markNumber(drawnNumber: Int) {
@@ -18,11 +11,9 @@ class BingoCard(numbers: String) {
 
     fun hasWon(): Boolean {
         val horizontalLines = this.card.windowed(gridSize, gridSize)
-        val verticalLines = (0 until gridSize)
-            .map { i -> this.card.slice((i until this.card.size step 5)) }
+        val verticalLines = (0 until gridSize).map { i -> this.card.slice((i until this.card.size step 5)) }
 
-        return (horizontalLines + verticalLines)
-            .any { it.all { pair -> pair.second } }
+        return (horizontalLines + verticalLines).any { it.all { pair -> pair.second } }
     }
 
     fun getScore(drawnNumber: Int): Int {
