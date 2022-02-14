@@ -2,6 +2,10 @@ package advent.day.day02
 
 import advent.AdventDay
 import advent.day.day02.domain.Movement
+import advent.day.day02.domain.Movement.DOWN
+import advent.day.day02.domain.Movement.FORWARD
+import advent.day.day02.domain.Movement.UP
+import advent.day.day02.domain.Position
 
 class AdventDay02 : AdventDay() {
     private val fileText = getFileAsText("day02")
@@ -16,44 +20,32 @@ class AdventDay02 : AdventDay() {
     }
 
     private fun runPart01() {
-        var hPosition = 0
-        var depth = 0
+        val position = movements
+            .fold(Position()) { acc, movement ->
+                val units = movement.second
+                val multiplier = movement.first.multiplier
 
-        movements.forEach { movement ->
-            val movementUnits = movement.second
-            val movementMultiplier = movement.first.multiplier
-
-            when (movement.first) {
-                Movement.UP, Movement.DOWN -> { depth += movementUnits * movementMultiplier }
-                Movement.FORWARD -> { hPosition += movementUnits }
-                else -> {}
+                when (movement.first) {
+                    UP, DOWN -> { Position(acc.hPosition, acc.depth + units * multiplier) }
+                    FORWARD -> { Position(acc.hPosition + units, acc.depth) }
+                }
             }
-        }
 
-        println("Result: ${hPosition * depth}")
+        println("Result: ${position.hPosition * position.depth}")
     }
 
     private fun runPart02() {
-        var depth = 0
-        var hPosition = 0
-        var aim = 0
+        val position = movements
+            .fold(Position()) { p, movement ->
+                val units = movement.second
+                val multiplier = movement.first.multiplier
 
-        movements.forEach { movement ->
-            val movementUnits = movement.second
-            val movementMultiplier = movement.first.multiplier
-
-            when (movement.first) {
-                Movement.UP, Movement.DOWN -> {
-                    aim += movementUnits * movementMultiplier
+                when (movement.first) {
+                    UP, DOWN -> { Position(p.hPosition, p.depth, p.aim + (units * multiplier)) }
+                    FORWARD -> { Position(p.hPosition + units, p.depth + (p.aim * units), p.aim) }
                 }
-                Movement.FORWARD -> {
-                    hPosition += movementUnits
-                    depth += aim * movementUnits
-                }
-                else -> {}
             }
-        }
 
-        println("Result: ${depth * hPosition}")
+        println("Result: ${position.depth * position.hPosition}")
     }
 }

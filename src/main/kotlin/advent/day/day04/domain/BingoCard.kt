@@ -21,9 +21,8 @@ class BingoCard(numbers: String) {
         val verticalLines = (0 until gridSize)
             .map { i -> this.card.slice((i until this.card.size step 5)) }
 
-        return (horizontalLines + verticalLines).any {
-            it.all { pair -> pair.second }
-        }
+        return (horizontalLines + verticalLines)
+            .any { it.all { pair -> pair.second } }
     }
 
     fun getScore(drawnNumber: Int): Int {
