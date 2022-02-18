@@ -22,12 +22,12 @@ class AdventDay12 : AdventDay() {
     }
 
     private fun countPathsOneVisitSmallCave(path: String, currentCave: String): Set<String> {
-        val validPaths: MutableSet<String> = mutableSetOf()
+        val validPaths = mutableSetOf<String>()
         if (currentCave == "end") {
             return setOf(path)
         }
 
-        this.paths[currentCave]?.forEach { nextCave ->
+        this.paths.getValue(currentCave).forEach { nextCave ->
             if (nextCave.uppercase() == nextCave || nextCave !in path) {
                 validPaths.addAll(countPathsOneVisitSmallCave("$path,$nextCave", nextCave))
             }
@@ -37,7 +37,7 @@ class AdventDay12 : AdventDay() {
     }
 
     private fun countPathsTwoVisitsOneSmallCave(path: String, currentCave: String): Set<String> {
-        val validPaths: MutableSet<String> = mutableSetOf()
+        val validPaths = mutableSetOf<String>()
         if (currentCave == "end") {
             return setOf(path)
         }
@@ -46,7 +46,7 @@ class AdventDay12 : AdventDay() {
             return emptySet()
         }
 
-        this.paths[currentCave]?.forEach { nextCave ->
+        this.paths.getValue(currentCave).forEach { nextCave ->
             val updatedPath = "$path,$nextCave"
 
             if (nextCave.uppercase() == nextCave) {

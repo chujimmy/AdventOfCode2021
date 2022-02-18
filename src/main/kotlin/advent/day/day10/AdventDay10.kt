@@ -9,65 +9,52 @@ class AdventDay10 : AdventDay() {
         .split("\n")
         .toList()
 
-    private val pairs = setOf(
-        Pair('(', ')'),
-        Pair('[', ']'),
-        Pair('{', '}'),
-        Pair('<', '>'),
+    private val pairs = mapOf(
+        ')' to '(',
+        ']' to '[',
+        '}' to '{',
+        '>' to '<',
+    )
+
+    private val syntaxErrorScore = mapOf(
+        ')' to 3L,
+        ']' to 57L,
+        '}' to 1197L,
+        '>' to 25137L,
+    )
+
+    private val autoCompleteScore = mapOf(
+        '(' to 1L,
+        '[' to 2L,
+        '{' to 3L,
+        '<' to 4L,
     )
 
     override fun run() {
-        val scores: List<Pair<Int, Long>> = navigationSubsystem.map { line ->
+        val scores = navigationSubsystem.map { line ->
             val stack = Stack<Char>()
-            var scorePair: Pair<Int, Long>? = null
+            var scorePair: Pair<Long, Long>? = null
 
             for (char in line) {
                 when (char) {
                     '(', '[', '{', '<' -> stack.push(char)
                     ')', ']', '}', '>' -> {
-                        val score = getSyntaxErrorScore(stack, char)
-                        if (score > 0) {
-                            scorePair = Pair(score, 0)
-                            break
+                        when {
+                            stack.isEmpty() -> {}
+                            stack.last() == pairs.getValue(char) -> { stack.pop() }
+                            else -> { scorePair = Pair(syntaxErrorScore.getValue(char), 0L); break }
                         }
                     }
                 }
             }
 
-            scorePair ?: Pair(0, stack.foldRight(0L) { c, acc -> (acc * 5L) + getAutocompleteScore(c) })
+            scorePair ?: Pair(0L, stack.foldRight(0L) { c, acc -> (acc * 5L) + autoCompleteScore.getValue(c) })
         }
 
-        val syntaxErrorScore = scores.filter { it.first != 0 }.sumOf { it.first }
+        val syntaxErrorScore = scores.filter { it.first != 0L }.sumOf { it.first }
         println("Syntax error score: $syntaxErrorScore")
         val autoCompleteScores = scores.filter { it.second != 0L }.map { it.second }.sortedBy { it }
         val autoCompleteMiddleScore = autoCompleteScores[autoCompleteScores.size / 2]
-        println("Syntax error score: $autoCompleteMiddleScore")
-    }
-
-    private fun getSyntaxErrorScore(stack: Stack<Char>, char: Char): Int {
-        if (stack.isEmpty()) return 0
-
-        if (pairs.contains(Pair(stack.peek(), char))) {
-            stack.pop()
-            return 0
-        }
-
-        return when (char) {
-            ')' -> 3
-            ']' -> 57
-            '}' -> 1197
-            '>' -> 25137
-            else -> 0
-        }
-    }
-
-    private fun getAutocompleteScore(char: Char): Long {
-        return when (char) {
-            '(' -> 1L
-            '[' -> 2L
-            '{' -> 3L
-            '<' -> 4L
-            else -> 0L
-        }
+        println("Autocomplete middle score: $autoCompleteMiddleScore")
     }
 }

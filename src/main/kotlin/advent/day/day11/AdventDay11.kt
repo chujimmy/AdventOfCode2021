@@ -7,14 +7,15 @@ class AdventDay11 : AdventDay() {
     private val initialOctopusMap = fileText
         .split("\n")
         .map { l -> l.toCharArray().map { c -> c.digitToInt() } }
+    private val xSize = initialOctopusMap[0].size
+    private val ySize = initialOctopusMap.size
 
     override fun run() {
-        val finalMap = (1..100).fold(Pair(initialOctopusMap, 0)) { acc, step ->
-            val map = acc.first
-            val octopusMap = map.mapIndexed { y, hLine ->
+        val finalMap = (1..250).fold(Pair(initialOctopusMap, 0)) { acc, step ->
+            val octopusMap = acc.first.mapIndexed { y, hLine ->
                 hLine.mapIndexed { x, energyLevel ->
-                    val countSurroundingFlashes = getAdjacentPoints(map, Pair(x, y))
-                        .map { getEnergyLevel(map, it) }
+                    val countSurroundingFlashes = getAdjacentPoints(Pair(x, y))
+                        .map { acc.first[it.second][it.first] }
                         .count { energy -> energy == 9 }
 
                     if (countSurroundingFlashes == 8) 10 else energyLevel + 1
@@ -27,7 +28,7 @@ class AdventDay11 : AdventDay() {
             while (flashingOctopusesToUpdate.isNotEmpty()) {
                 val position = flashingOctopusesToUpdate.removeFirst()
 
-                getAdjacentPoints(octopusMap, position).forEach { octopusMap[it.second][it.first] += 1 }
+                getAdjacentPoints(position).forEach { octopusMap[it.second][it.first] += 1 }
                 handledFlashingOctopuses.add(position)
 
                 flashingOctopusesToUpdate.addAll(
@@ -37,15 +38,15 @@ class AdventDay11 : AdventDay() {
                 )
             }
 
-            val updatedMap = octopusMap.mapIndexed { _, line ->
-                line.mapIndexed { _, energyLevel ->
-                    if (energyLevel >= 10) 0 else energyLevel
+            (0 until ySize).forEach { y ->
+                (0 until xSize).forEach { x ->
+                    if (octopusMap[y][x] >= 10) octopusMap[y][x] = 0
                 }
             }
 
-            printMap(step, updatedMap)
+            printMap(step, octopusMap)
 
-            Pair(updatedMap, acc.second + updatedMap.sumOf { hLine -> hLine.count { energy -> energy == 0 } })
+            Pair(octopusMap, acc.second + octopusMap.sumOf { hLine -> hLine.count { energy -> energy == 0 } })
         }
 
         println("Total flashes: ${finalMap.second}")
@@ -63,33 +64,25 @@ class AdventDay11 : AdventDay() {
 
     private fun printMap(step: Int, map: List<List<Int>>) {
         val allZeros = map.all { hLine -> hLine.all { it == 0 } }
-        if (allZeros) {
-            println("All octopuses flash at the same time, Step $step")
-        }
         val mapStr = map.joinToString("\n") { it.joinToString("") }
+        print(if (allZeros) "All octopuses flash at the same time\n" else "")
         println("Map, Step $step \n$mapStr\n")
     }
 
-    private fun getAdjacentPoints(octopusMap: List<List<Int>>, position: Pair<Int, Int>): List<Pair<Int, Int>> {
+    private fun getAdjacentPoints(position: Pair<Int, Int>): List<Pair<Int, Int>> {
         return (-1..1).flatMap { y ->
             (-1..1).map { x ->
                 Pair(position.first + x, position.second + y)
             }
         }
-            .filter { isPositionOnMap(octopusMap, it) }
+            .filter { isPositionValid(it) }
             .filter { it != position }
     }
 
-    private fun isPositionOnMap(octopusMap: List<List<Int>>, position: Pair<Int, Int>): Boolean {
+    private fun isPositionValid(position: Pair<Int, Int>): Boolean {
         val x = position.first
         val y = position.second
 
-        return x >= 0 && x < octopusMap[0].size && y >= 0 && y < octopusMap.size
-    }
-
-    private fun getEnergyLevel(octopusMap: List<List<Int>>, position: Pair<Int, Int>): Int {
-        val x = position.first
-        val y = position.second
-        return if (isPositionOnMap(octopusMap, position)) octopusMap[y][x] else -1
+        return x in 0 until xSize && y in 0 until ySize
     }
 }

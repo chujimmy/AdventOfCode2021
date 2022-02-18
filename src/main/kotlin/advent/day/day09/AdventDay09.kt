@@ -21,40 +21,29 @@ class AdventDay09 : AdventDay() {
         val lowPoints = heightMap
             .flatMapIndexed { y, hLine ->
                 hLine.mapIndexed { x, pointHeight ->
-                    val currentPoint = Point(x, y, pointHeight)
-                    val isLowPoint = adjacentPointsOffsets
-                        .map { o -> isPointLower(currentPoint, x + o.first, y + o.second) }
-                        .reduce { acc, element -> acc && element }
-
-                    Pair(Point(x, y, pointHeight), isLowPoint)
+                    Point(x, y, pointHeight)
                 }
             }
-            .filter { it.second }
-            .map { it.first }
+            .associateWith { p -> adjacentPointsOffsets.map { Pair(p.x + it.first, p.y + it.second) } }
+            .filter { it.value.all { a -> isPointLower(it.key, a.first, a.second) } }
+            .map { it.key }
 
         println("Risk Level: ${lowPoints.sumOf { it.height + 1 }}")
 
         val basins = lowPoints.associateWith { lowPoint ->
-            val pointsToVisit: MutableList<Point> = mutableListOf(lowPoint)
-            val basin: MutableSet<Point> = mutableSetOf()
+            val pointsToVisit = mutableListOf(lowPoint)
+            val basin = mutableSetOf<Point>()
 
             while (pointsToVisit.isNotEmpty()) {
                 val point = pointsToVisit.removeFirst()
+                val higherAdjacentPoints = adjacentPointsOffsets
+                    .map { Pair(point.x + it.first, point.y + it.second) }
+                    .filter { isValidPoint(it.first, it.second) }
+                    .map { Point(it.first, it.second, heightMap[it.second][it.first]) }
+                    .filter { adjacentPoint -> adjacentPoint.height > point.height && adjacentPoint.height < 9 }
+
                 basin.add(point)
-
-                adjacentPointsOffsets.forEach loop@{ offset ->
-                    val adjacentX = point.x + offset.first
-                    val adjacentY = point.y + offset.second
-
-                    if (isValidPoint(adjacentX, adjacentY)) {
-                        val adjacentHeight = heightMap[adjacentY][adjacentX]
-                        val adjacentPoint = Point(adjacentX, adjacentY, adjacentHeight)
-
-                        if (adjacentHeight > point.height && adjacentHeight < 9 && !basin.contains(adjacentPoint)) {
-                            pointsToVisit.add(adjacentPoint)
-                        }
-                    }
-                }
+                pointsToVisit.addAll(higherAdjacentPoints)
             }
             basin
         }
