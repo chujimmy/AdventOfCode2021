@@ -23,26 +23,23 @@ class AdventDay13 : AdventDay() {
             }
         }
 
-        foldingInstructions.fold(paper) { acc, instruction -> fold(acc, instruction) }
+        foldingInstructions
+            .fold(paper) { acc, instruction -> fold(acc, instruction) }
     }
 
     private fun fold(paper: Array<Array<Char>>, foldingInstruction: Pair<Char, Int>): Array<Array<Char>> {
         val foldingPosition = foldingInstruction.second
-        return when (foldingInstruction.first) {
-            'x' -> {
-                val left = paper.map { it.copyOfRange(0, foldingPosition) }.toTypedArray()
-                val right = paper.map { it.copyOfRange(foldingPosition + 1, it.size) }.toTypedArray()
-
-                applyFolding(left, right, true)
-            }
-            'y' -> {
-                val top = (0 until foldingPosition).map { i -> paper[i] }.toTypedArray()
-                val bottom = (foldingPosition + 1 until paper.size).map { i -> paper[i] }.toTypedArray()
-
-                applyFolding(top, bottom, false)
-            }
-            else -> { emptyArray() }
+        val triple = if (foldingInstruction.first == 'x') {
+            val left = paper.map { it.copyOfRange(0, foldingPosition) }.toTypedArray()
+            val right = paper.map { it.copyOfRange(foldingPosition + 1, it.size) }.toTypedArray()
+            Triple(left, right, true)
+        } else {
+            val top = (0 until foldingPosition).map { i -> paper[i] }.toTypedArray()
+            val bottom = (foldingPosition + 1 until paper.size).map { i -> paper[i] }.toTypedArray()
+            Triple(top, bottom, false)
         }
+
+        return applyFolding(triple.first, triple.second, triple.third)
     }
 
     private fun applyFolding(first: Array<Array<Char>>, second: Array<Array<Char>>, xFolding: Boolean): Array<Array<Char>> {
@@ -50,9 +47,10 @@ class AdventDay13 : AdventDay() {
             return emptyArray()
         }
 
-        second.flatMapIndexed { y, hLine ->
-            hLine.mapIndexed { x, char -> if (char == '#') Pair(x, y) else null }
-        }
+        second
+            .flatMapIndexed { y, hLine ->
+                hLine.mapIndexed { x, char -> if (char == '#') Pair(x, y) else null }
+            }
             .filterNotNull()
             .forEach { coordinates ->
                 val newX = if (xFolding) first[0].size - 1 - coordinates.first else coordinates.first

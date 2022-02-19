@@ -40,16 +40,13 @@ class AdventDay21 : AdventDay() {
             }
         }
 
-        println("score $scores. Dice rolls $rollCount")
+        val minScore = scores.minOf { it.value.score }
+        println("Part 01: Dice rolls * Loser Score = $rollCount * $minScore = ${rollCount * minScore}")
     }
 
     private fun runPart02() {
-        val startTime = System.currentTimeMillis()
         val winsCount = play(player2, player1)
-        val endTime = System.currentTimeMillis()
-        println("Execution time ${(endTime - startTime)}ms")
-
-        println("Most wins: ${winsCount.first.max(winsCount.second)}")
+        println("Part 02: Most wins: ${winsCount.first.max(winsCount.second)}")
     }
 
     private fun play(previousPlayer: PositionAndScore, currentPlayer: PositionAndScore): Pair<BigInteger, BigInteger> {

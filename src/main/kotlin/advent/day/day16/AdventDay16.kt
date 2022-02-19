@@ -31,8 +31,8 @@ class AdventDay16 : AdventDay() {
         val valuesList = mutableListOf<Long>()
 
         while (canReadPacket(transmission, packetToRead, packetRead)) {
-            val version = extractFromBuilder(transmission, 0, 3).toInt(2)
-            val type = extractFromBuilder(transmission, 0, 3).toInt(2)
+            val version = extractFromBuilder(transmission, 3).toInt(2)
+            val type = extractFromBuilder(transmission, 3).toInt(2)
 
             summedVersionTotal += version
 
@@ -74,15 +74,15 @@ class AdventDay16 : AdventDay() {
     }
 
     private fun extractSubPacketToRead(transmissionBuilder: StringBuilder): Pair<StringBuilder, Int> {
-        val packetLengthTypeId = extractFromBuilder(transmissionBuilder, 0, 1).toInt(2)
+        val packetLengthTypeId = extractFromBuilder(transmissionBuilder, 1).toInt(2)
 
         return if (packetLengthTypeId == 0) {
-            val bitsToReadCount = extractFromBuilder(transmissionBuilder, 0, 15).toInt(2)
-            val bitsToRead = StringBuilder(extractFromBuilder(transmissionBuilder, 0, bitsToReadCount))
+            val bitsToReadCount = extractFromBuilder(transmissionBuilder, 15).toInt(2)
+            val bitsToRead = StringBuilder(extractFromBuilder(transmissionBuilder, bitsToReadCount))
 
             Pair(bitsToRead, -1)
         } else {
-            val packetsToReadCount = extractFromBuilder(transmissionBuilder, 0, 11).toInt(2)
+            val packetsToReadCount = extractFromBuilder(transmissionBuilder, 11).toInt(2)
 
             Pair(transmissionBuilder, packetsToReadCount)
         }
@@ -93,9 +93,9 @@ class AdventDay16 : AdventDay() {
             (packetToRead == -1 && builder.isNotBlank() && BigInteger(builder.toString(), 2) != BigInteger.ZERO)
     }
 
-    private fun extractFromBuilder(builder: StringBuilder, start: Int, end: Int): String {
-        val str = builder.substring(start, end)
-        builder.delete(start, end)
+    private fun extractFromBuilder(builder: StringBuilder, end: Int): String {
+        val str = builder.substring(0, end)
+        builder.delete(0, end)
         return str
     }
 }

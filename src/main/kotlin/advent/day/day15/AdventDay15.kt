@@ -2,12 +2,12 @@ package advent.day.day15
 
 import advent.AdventDay
 import advent.day.day15.domain.Node
-import java.util.PriorityQueue
+import java.util.*
 
 class AdventDay15 : AdventDay() {
     private val fileText = getFileAsText("day15")
 
-    private val riskMap = fileText
+    private val riskMapList = fileText
         .split("\n")
         .map { it.toCharArray().map { d -> d.digitToInt() } }
 
@@ -19,78 +19,64 @@ class AdventDay15 : AdventDay() {
     )
 
     override fun run() {
-        val resultPart01 = findPathDijkstra(riskMap)
+        val resultPart01 = findPathDijkstra(duplicateRiskMap(riskMapList, 1))
         println("Part 01 - Least risky path risk: $resultPart01")
 
-        val resultPart02 = findPathDijkstra(duplicateMap(riskMap, 5))
-        println("Part 02 - Least risky path risk : $resultPart02")
+        val resultPart02 = findPathDijkstra(duplicateRiskMap(riskMapList, 5))
+        println("Part 02 - Least risky path risk: $resultPart02")
     }
 
-    private fun findPathDijkstra(riskMap: List<List<Int>>): Int {
-        val startTime = System.currentTimeMillis()
-        val startNodeWithRisk = Node(0, 0, 0)
-        val endNode = Node(riskMap[0].lastIndex, riskMap.lastIndex)
-
-        val nodesDistances = riskMap
-            .flatMapIndexed { y, hLine -> hLine.mapIndexed { x, _ -> Node(x, y) } }
-            .associateWith { Node(-1, -1) }
+    private fun findPathDijkstra(riskMap: Map<Node, Int>): Int {
+        val dijkstraMap = riskMap
+            .mapValues { if (it.key == Node(0, 0)) 0 else Int.MAX_VALUE }
             .toMutableMap()
-        nodesDistances[Node(0, 0)] = startNodeWithRisk
+        val settledNodes = mutableSetOf<Node>()
+        val unsettledNodes = PriorityQueue(compareBy<Pair<Node, Int>> { it.second })
 
-        val settledNodes: MutableSet<Node> = mutableSetOf()
-        val unsettledNodes = PriorityQueue(compareBy<Node> { it.risk })
-        unsettledNodes.add(startNodeWithRisk)
+        unsettledNodes.add(Pair(Node(0, 0), 0))
 
         while (unsettledNodes.isNotEmpty()) {
-            val currentNode = unsettledNodes.remove()
+            val currentNode = unsettledNodes.remove().first
 
             adjacentPointsOffsets
                 .map { Node(currentNode.x + it.first, currentNode.y + it.second) }
-                .filter { isNodeValid(riskMap, it) }
-                .filter { !settledNodes.contains(it) }
+                .filter { dijkstraMap.containsKey(it) }
+                .filterNot { settledNodes.contains(it) }
                 .forEach { adjacentNode ->
-                    val riskToAdjacentFromCurrent = nodesDistances[currentNode]!!.risk + riskMap[adjacentNode.y][adjacentNode.x]
-                    val previousRiskToAdjacent = nodesDistances[adjacentNode]!!.risk
+                    val riskToAdjacentFromCurrent = dijkstraMap.getValue(currentNode) + riskMap.getValue(adjacentNode)
+                    val previousRiskToAdjacent = dijkstraMap.getValue(adjacentNode)
                     if (riskToAdjacentFromCurrent < previousRiskToAdjacent) {
-                        nodesDistances[adjacentNode] = Node(currentNode.x, currentNode.y, riskToAdjacentFromCurrent)
-                        unsettledNodes.add(Node(adjacentNode.x, adjacentNode.y, riskToAdjacentFromCurrent))
+                        dijkstraMap[adjacentNode] = riskToAdjacentFromCurrent
+                        unsettledNodes.add(Pair(adjacentNode, riskToAdjacentFromCurrent))
                     }
                 }
             settledNodes.add(currentNode)
         }
 
-        val endTime = System.currentTimeMillis()
-        println("Execution time ${(endTime - startTime)}ms")
-        return nodesDistances[endNode]!!.risk
+        return dijkstraMap.getValue(Node(riskMap.maxOf { it.key.x }, riskMap.maxOf { it.key.y }))
     }
 
-    private fun isNodeValid(riskMap: List<List<Int>>, node: Node): Boolean {
-        return node.x >= 0 && node.x < riskMap[0].size && node.y >= 0 && node.y < riskMap.size
-    }
-
-    private fun duplicateMap(riskMap: List<List<Int>>, replicationFactor: Int): List<List<Int>> {
-        val subMapsToPlace: Map<Int, List<List<Int>>> = (0..8).associateWith { i ->
-            riskMap.map { hLine ->
+    private fun duplicateRiskMap(baseRiskMap: List<List<Int>>, replicationFactor: Int): Map<Node, Int> {
+        val subMapsToPlace = (0..8).associateWith { i ->
+            baseRiskMap.map { hLine ->
                 hLine.map { risk ->
                     if (risk + i > 9) (risk + i - 9) else risk + i
                 }
             }
         }
 
-        val duplicatedMap = List(replicationFactor * riskMap[0].size) { y ->
-            List(replicationFactor * riskMap.size) { x ->
-                val yRepetitionOffset = y / riskMap[0].size
-                val xRepetitionOffset = x / riskMap.size
+        return (0 until replicationFactor * baseRiskMap[0].size).flatMap { y ->
+            (0 until replicationFactor * baseRiskMap.size).map { x ->
+                val yRepetitionOffset = y / baseRiskMap[0].size
+                val xRepetitionOffset = x / baseRiskMap.size
 
                 val repetitionOffset = (yRepetitionOffset + xRepetitionOffset) % 9
 
-                val subY = y % riskMap[0].size
-                val subX = x % riskMap.size
+                val subY = y % baseRiskMap[0].size
+                val subX = x % baseRiskMap.size
 
-                subMapsToPlace[repetitionOffset]!![subY][subX]
+                Pair(Node(x, y), subMapsToPlace.getValue(repetitionOffset)[subY][subX])
             }
-        }
-
-        return duplicatedMap
+        }.associate { it.first to it.second }
     }
 }
